@@ -88,14 +88,14 @@ class AiidaWorkGraph:
         self._add_tasks()
 
     def _validate_workflow(self):
-        """Checks if the core workflow uses for its tasks and data valid names for AiiDA."""
+        """Checks if the core workflow uses valid AiiDA names for its tasks and data."""
         for task in self._core_workflow.tasks:
             try:
                 aiida.common.validate_link_label(task.name)
             except ValueError as exception:
                 msg = f"Raised error when validating task name '{task.name}': {exception.args[0]}"
                 raise ValueError(msg) from exception
-            for input_ in task.inputs:
+            for input_, _ in task.inputs:
                 try:
                     aiida.common.validate_link_label(input_.name)
                 except ValueError as exception:
@@ -110,10 +110,9 @@ class AiidaWorkGraph:
 
     def _add_available_data(self):
         """Adds the available data on initialization to the workgraph"""
-        for task in self._core_workflow.tasks:
-            for input_ in task.inputs:
-                if input_.available:
-                    self._add_aiida_input_data_node(task, input_)
+        for data in self._core_workflow.data:
+            if data.available:
+                self._add_aiida_input_data_node(data)
 
     @staticmethod
     def replace_invalid_chars_in_label(label: str) -> str:
@@ -137,27 +136,27 @@ class AiidaWorkGraph:
             f"{obj.name}" + "__".join(f"_{key}_{value}" for key, value in obj.coordinates.items())
         )
 
-    def _add_aiida_input_data_node(self, task: graph_items.Task, input_: graph_items.Data):
+    def _add_aiida_input_data_node(self, data: graph_items.Data):
         """
         Create an `aiida.orm.Data` instance from the provided graph item.
         """
-        label = AiidaWorkGraph.get_aiida_label_from_graph_item(input_)
-        input_path = Path(input_.src)
-        input_full_path = input_.src if input_path.is_absolute() else task.config_rootdir / input_path
+        label = AiidaWorkGraph.get_aiida_label_from_graph_item(data)
+        data_path = Path(data.src)
+        data_full_path = data.src if data_path.is_absolute() else self._core_workflow.config_rootdir / data_path
 
-        if input_.computer is not None:
+        if data.computer is not None:
             try:
-                computer = aiida.orm.load_computer(input_.computer)
+                computer = aiida.orm.load_computer(data.computer)
             except NotExistent as err:
-                msg = f"Could not find computer {input_.computer!r} for input {input_}."
+                msg = f"Could not find computer {data.computer!r} for input {data}."
                 raise ValueError(msg) from err
-            self._aiida_data_nodes[label] = aiida.orm.RemoteData(remote_path=input_.src, label=label, computer=computer)
-        elif input_.type == "file":
-            self._aiida_data_nodes[label] = aiida.orm.SinglefileData(label=label, file=input_full_path)
-        elif input_.type == "dir":
-            self._aiida_data_nodes[label] = aiida.orm.FolderData(label=label, tree=input_full_path)
+            self._aiida_data_nodes[label] = aiida.orm.RemoteData(remote_path=data.src, label=label, computer=computer)
+        elif data.type == "file":
+            self._aiida_data_nodes[label] = aiida.orm.SinglefileData(label=label, file=data_full_path)
+        elif data.type == "dir":
+            self._aiida_data_nodes[label] = aiida.orm.FolderData(label=label, tree=data_full_path)
         else:
-            msg = f"Data type {input_.type!r} not supported. Please use 'file' or 'dir'."
+            msg = f"Data type {data.type!r} not supported. Please use 'file' or 'dir'."
             raise ValueError(msg)
 
     def _add_tasks(self):
@@ -168,15 +167,15 @@ class AiidaWorkGraph:
         for task in self._core_workflow.tasks:
             self._create_task_node(task)
 
-        # NOTE: The wait on tasks has to be added after the creation of the tasks because it might reference tasks from
-        # the future
+        # NOTE: The wait on tasks has to be added after the creation of the tasks
+        #       because it might reference tasks defined after the current one
         for task in self._core_workflow.tasks:
             self._link_wait_on_to_task(task)
 
         for task in self._core_workflow.tasks:
             for output in task.outputs:
                 self._link_output_nodes_to_task(task, output)
-            for input_ in task.inputs:
+            for input_, _ in task.inputs:
                 self._link_input_nodes_to_task(task, input_)
             self._link_arguments_to_task(task)
 
@@ -275,7 +274,7 @@ class AiidaWorkGraph:
             )
             raise ValueError(msg)
 
-        name_to_input_map = {input_.name: input_ for input_ in task.inputs}
+        name_to_input_map = {input_.name: input_ for input_, _ in task.inputs}
         # we track the linked input arguments, to ensure that all linked input nodes got linked arguments
         linked_input_args = []
         for arg in task.cli_arguments:

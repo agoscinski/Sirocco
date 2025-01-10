@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from sirocco.core import Workflow
+from sirocco.core._tasks.icon_task import IconTask
 from sirocco.parsing._yaml_data_models import ConfigShellTask, ShellCliArgument
 from sirocco.pretty_print import PrettyPrinter
 from sirocco.vizgraph import VizGraph
@@ -89,3 +90,51 @@ def test_run_workgraph(config_path, aiida_computer):
     aiida_workflow = AiidaWorkGraph(core_workflow)
     out = aiida_workflow.run()
     assert out.get("execution_count", None).value == 1
+
+
+# configs containing task using icon plugin
+@pytest.mark.parametrize(
+    "config_paths",
+    [
+        {
+            "yml": Path("tests/cases/large/config/test_config_large.yml"),
+            "txt": Path("tests/cases/large/data/test_config_large.txt"),
+            "svg": Path("tests/cases/large/svg/test_config_large.svg"),
+        }
+    ],
+)
+def test_nml_mod(config_paths, tmp_path):
+    nml_refdir = config_paths["txt"].parent / "ICON_namelists"
+    wf = Workflow.from_yaml(config_paths["yml"])
+    # Create core mamelists
+    for task in wf.tasks:
+        if isinstance(task, IconTask):
+            task.create_workflow_namelists(folder=tmp_path)
+    # Compare against reference
+    for nml in nml_refdir.glob("*"):
+        ref_nml = nml.read_text()
+        test_nml = (tmp_path / nml.name).read_text()
+        if test_nml != ref_nml:
+            new_path = nml.with_suffix(".new")
+            new_path.write_text(test_nml)
+            assert ref_nml == test_nml, f"Namelist {nml.name} differs between ref and test"
+
+
+@pytest.mark.skip(reason="don't run it each time, uncomment to regenerate serilaized data")
+# configs containing task using icon plugin
+@pytest.mark.parametrize(
+    "config_paths",
+    [
+        {
+            "yml": Path("tests/cases/large/config/test_config_large.yml"),
+            "txt": Path("tests/cases/large/data/test_config_large.txt"),
+            "svg": Path("tests/cases/large/svg/test_config_large.svg"),
+        }
+    ],
+)
+def test_serialize_nml(config_paths):
+    nml_refdir = config_paths["txt"].parent / "ICON_namelists"
+    wf = Workflow.from_yaml(config_paths["yml"])
+    for task in wf.tasks:
+        if isinstance(task, IconTask):
+            task.create_workflow_namelists(folder=nml_refdir)

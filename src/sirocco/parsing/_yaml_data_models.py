@@ -122,7 +122,7 @@ class TargetNodesBaseModel(_NamedBaseModel):
 
     @field_validator("parameters", mode="before")
     @classmethod
-    def check_dict_single_item(cls, params: dict) -> dict:
+    def check_parameters_spec(cls, params: dict) -> dict:
         if not params:
             return {}
         for k, v in params.items():
@@ -133,7 +133,7 @@ class TargetNodesBaseModel(_NamedBaseModel):
 
 
 class ConfigCycleTaskInput(TargetNodesBaseModel):
-    pass
+    port: str | None = None
 
 
 class ConfigCycleTaskWaitOn(TargetNodesBaseModel):
@@ -376,13 +376,51 @@ class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
 
 
 @dataclass
+class ConfigNamelist:
+    """Class for namelist specifications"""
+
+    path: Path
+    specs: dict | None = None
+
+
+@dataclass
 class ConfigIconTaskSpecs:
     plugin: ClassVar[Literal["icon"]] = "icon"
-    namelists: dict[str, str] | None = None
+    namelists: dict[str, ConfigNamelist] | None = None
 
 
 class ConfigIconTask(ConfigBaseTask, ConfigIconTaskSpecs):
-    pass
+    # validation done here and not in ConfigNamelist so that we can still
+    # import ConfigIconTaskSpecs in core._tasks.IconTask. Hence the iteration
+    # over the namelists that could be avoided with a more raw pydantic design
+    @field_validator("namelists", mode="before")
+    @classmethod
+    def check_nml(cls, nml_list: list[Any]) -> ConfigNamelist:
+        if nml_list is None:
+            msg = "ICON tasks need namelists, got none"
+            raise ValueError(msg)
+        if not isinstance(nml_list, list):
+            msg = f"expected a list got type {type(nml_list).__name__}"
+            raise TypeError(msg)
+        namelists = {}
+        master_found = False
+        for nml in nml_list:
+            msg = f"was expecting a dict of length 1 or a string, got {nml}"
+            if not isinstance(nml, (str, dict)):
+                raise TypeError(msg)
+            if isinstance(nml, dict) and len(nml) > 1:
+                raise TypeError(msg)
+            if isinstance(nml, str):
+                path, specs = Path(nml), None
+            else:
+                path, specs = next(iter(nml.items()))
+                path = Path(path)
+            namelists[path.name] = ConfigNamelist(path=path, specs=specs)
+            master_found = master_found or (path.name == "icon_master.namelist")
+        if not master_found:
+            msg = "icon_master.namelist not found"
+            raise ValueError(msg)
+        return namelists
 
 
 @dataclass
@@ -407,8 +445,9 @@ class ConfigBaseData(_NamedBaseModel, ConfigBaseDataSpecs):
     @classmethod
     def is_file_or_dir(cls, value: str) -> str:
         """."""
-        if value not in ["file", "dir"]:
-            msg = "Must be one of 'file' or 'dir'."
+        valid_types = ("file", "dir")
+        if value not in valid_types:
+            msg = f"Must be one of {valid_types}"
             raise ValueError(msg)
         return value
 
