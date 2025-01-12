@@ -33,9 +33,9 @@ def pprinter():
 
 # configs that are tested for parsing
 config_test_files = [
-    "tests/cases/small/config/test_config_small.yml",
-    "tests/cases/large/config/test_config_large.yml",
-    "tests/cases/parameters/config/test_config_parameters.yml",
+    "tests/cases/small/config/config.yml",
+    "tests/cases/large/config/config.yml",
+    "tests/cases/parameters/config/config.yml",
 ]
 
 
@@ -73,8 +73,8 @@ def test_vizgraph(config_paths):
 @pytest.mark.parametrize(
     "config_path",
     [
-        "tests/cases/small/config/test_config_small.yml",
-        "tests/cases/parameters/config/test_config_parameters.yml",
+        "tests/cases/small/config/config.yml",
+        "tests/cases/parameters/config/config.yml",
     ],
 )
 def test_run_workgraph(config_path, aiida_computer):
@@ -97,9 +97,9 @@ def test_run_workgraph(config_path, aiida_computer):
     "config_paths",
     [
         {
-            "yml": Path("tests/cases/large/config/test_config_large.yml"),
-            "txt": Path("tests/cases/large/data/test_config_large.txt"),
-            "svg": Path("tests/cases/large/svg/test_config_large.svg"),
+            "yml": Path("tests/cases/large/config/config.yml"),
+            "txt": Path("tests/cases/large/data/config.txt"),
+            "svg": Path("tests/cases/large/svg/config.svg"),
         }
     ],
 )
@@ -126,9 +126,9 @@ def test_nml_mod(config_paths, tmp_path):
     "config_paths",
     [
         {
-            "yml": Path("tests/cases/large/config/test_config_large.yml"),
-            "txt": Path("tests/cases/large/data/test_config_large.txt"),
-            "svg": Path("tests/cases/large/svg/test_config_large.svg"),
+            "yml": Path("tests/cases/large/config/config.yml"),
+            "txt": Path("tests/cases/large/data/config.txt"),
+            "svg": Path("tests/cases/large/svg/config.svg"),
         }
     ],
 )
