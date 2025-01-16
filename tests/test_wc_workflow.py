@@ -31,22 +31,21 @@ def pprinter():
     return PrettyPrinter()
 
 
-# configs that are tested for parsing
-config_test_files = [
-    "tests/cases/small/config/test_config_small.yml",
-    "tests/cases/large/config/test_config_large.yml",
-    "tests/cases/parameters/config/test_config_parameters.yml",
-]
-
-
-@pytest.fixture(params=config_test_files)
-def config_paths(request):
-    config_path = Path(request.param)
+def generate_config_paths(test_case: str):
     return {
-        "yml": config_path,
-        "txt": (config_path.parent.parent / "data" / config_path.name).with_suffix(".txt"),
-        "svg": (config_path.parent.parent / "svg" / config_path.name).with_suffix(".svg"),
+        "yml": Path(f"tests/cases/{test_case}/config/config.yml"),
+        "txt": Path(f"tests/cases/{test_case}/data/config.txt"),
+        "svg": Path(f"tests/cases/{test_case}/svg/config.svg"),
     }
+
+
+# configs that are tested for parsing
+all_uses_cases = ["small", "parameters", "large"]
+
+
+@pytest.fixture(params=all_uses_cases)
+def config_paths(request):
+    return generate_config_paths(request.param)
 
 
 def test_parse_config_file(config_paths, pprinter):
@@ -73,8 +72,8 @@ def test_vizgraph(config_paths):
 @pytest.mark.parametrize(
     "config_path",
     [
-        "tests/cases/small/config/test_config_small.yml",
-        "tests/cases/parameters/config/test_config_parameters.yml",
+        "tests/cases/small/config/config.yml",
+        "tests/cases/parameters/config/config.yml",
     ],
 )
 def test_run_workgraph(config_path, aiida_computer):
@@ -95,13 +94,7 @@ def test_run_workgraph(config_path, aiida_computer):
 # configs containing task using icon plugin
 @pytest.mark.parametrize(
     "config_paths",
-    [
-        {
-            "yml": Path("tests/cases/large/config/test_config_large.yml"),
-            "txt": Path("tests/cases/large/data/test_config_large.txt"),
-            "svg": Path("tests/cases/large/svg/test_config_large.svg"),
-        }
-    ],
+    [generate_config_paths("large")],
 )
 def test_nml_mod(config_paths, tmp_path):
     nml_refdir = config_paths["txt"].parent / "ICON_namelists"
@@ -124,13 +117,7 @@ def test_nml_mod(config_paths, tmp_path):
 # configs containing task using icon plugin
 @pytest.mark.parametrize(
     "config_paths",
-    [
-        {
-            "yml": Path("tests/cases/large/config/test_config_large.yml"),
-            "txt": Path("tests/cases/large/data/test_config_large.txt"),
-            "svg": Path("tests/cases/large/svg/test_config_large.svg"),
-        }
-    ],
+    [generate_config_paths("large")],
 )
 def test_serialize_nml(config_paths):
     nml_refdir = config_paths["txt"].parent / "ICON_namelists"
