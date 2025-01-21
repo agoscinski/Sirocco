@@ -1,12 +1,11 @@
 from __future__ import annotations
 
 from itertools import product
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Self
 
-from sirocco.core import _tasks  # noqa [F401]
 from sirocco.core.graph_items import Cycle, Data, Store, Task
 from sirocco.parsing._yaml_data_models import (
-    ConfigWorkflow,
+    CanonicalWorkflow,
     load_workflow_config,
 )
 
@@ -21,7 +20,7 @@ if TYPE_CHECKING:
 class Workflow:
     """Internal representation of a workflow"""
 
-    def __init__(self, workflow_config: ConfigWorkflow) -> None:
+    def __init__(self, workflow_config: CanonicalWorkflow) -> None:
         self.name: str = workflow_config.name
         self.config_rootdir: Path = workflow_config.rootdir
         self.tasks: Store = Store()
@@ -70,7 +69,11 @@ class Workflow:
                         self.tasks.add(task)
                         cycle_tasks.append(task)
                 self.cycles.add(
-                    Cycle(name=cycle_name, tasks=cycle_tasks, coordinates={} if date is None else {"date": date})
+                    Cycle(
+                        name=cycle_name,
+                        tasks=cycle_tasks,
+                        coordinates={} if date is None else {"date": date},
+                    )
                 )
 
         # 4 - Link wait on tasks
@@ -85,5 +88,5 @@ class Workflow:
                 yield date
 
     @classmethod
-    def from_yaml(cls, config_path: str):
+    def from_yaml(cls: type[Self], config_path: str) -> Self:
         return cls(load_workflow_config(config_path))

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import itertools
 import time
+import typing
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -8,7 +10,16 @@ from typing import Annotated, Any, ClassVar, Literal
 
 from isoduration import parse_duration
 from isoduration.types import Duration  # pydantic needs type # noqa: TCH002
-from pydantic import BaseModel, ConfigDict, Discriminator, Field, Tag, field_validator, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Discriminator,
+    Field,
+    Tag,
+    field_validator,
+    model_validator,
+)
 
 from sirocco.parsing._utils import TimeUtils
 
@@ -473,7 +484,11 @@ class ConfigData(BaseModel):
     generated: list[ConfigGeneratedData] = []
 
 
-def get_plugin_from_named_base_model(data: dict) -> str:
+def get_plugin_from_named_base_model(
+    data: dict | ConfigRootTask | ConfigShellTask | ConfigIconTask,
+) -> str:
+    if isinstance(data, (ConfigRootTask, ConfigShellTask, ConfigIconTask)):
+        return data.plugin
     name_and_specs = _NamedBaseModel.merge_name_and_specs(data)
     if name_and_specs.get("name", None) == "ROOT":
         return ConfigRootTask.plugin
@@ -493,14 +508,44 @@ ConfigTask = Annotated[
 
 
 class ConfigWorkflow(BaseModel):
+    """
+    The root of the configuration tree.
+
+    Examples:
+
+        minimal yaml to generate:
+
+            >>> import textwrap
+            >>> import pydantic_yaml
+            >>> config = textwrap.dedent(
+            ...     '''
+            ...     cycles:
+            ...       - minimal_cycle:
+            ...           tasks:
+            ...             - task_a:
+            ...     tasks:
+            ...       - task_b:
+            ...           plugin: shell
+            ...     data:
+            ...       available:
+            ...         - foo:
+            ...       generated:
+            ...         - bar:
+            ...     '''
+            ... )
+            >>> wf = pydantic_yaml.parse_yaml_raw_as(ConfigWorkflow, config)
+
+        minimum programmatically created instance
+
+            >>> empty_wf = ConfigWorkflow(cycles=[], tasks=[], data={})
+
+    """
+
     name: str | None = None
-    rootdir: Path | None = None
     cycles: list[ConfigCycle]
     tasks: list[ConfigTask]
     data: ConfigData
     parameters: dict[str, list] = {}
-    data_dict: dict = {}
-    task_dict: dict = {}
 
     @field_validator("parameters", mode="before")
     @classmethod
@@ -516,18 +561,8 @@ class ConfigWorkflow(BaseModel):
         return data
 
     @model_validator(mode="after")
-    def build_internal_dicts(self) -> ConfigWorkflow:
-        self.data_dict = {data.name: data for data in self.data.available} | {
-            data.name: data for data in self.data.generated
-        }
-        self.task_dict = {task.name: task for task in self.tasks}
-        return self
-
-    @model_validator(mode="after")
     def check_parameters(self) -> ConfigWorkflow:
-        task_data_list = self.tasks + self.data.generated
-        if self.data.available:
-            task_data_list.extend(self.data.available)
+        task_data_list = itertools.chain(self.tasks, self.data.generated, self.data.available)
         for item in task_data_list:
             for param_name in item.parameters:
                 if param_name not in self.parameters:
@@ -536,7 +571,48 @@ class ConfigWorkflow(BaseModel):
         return self
 
 
-def load_workflow_config(workflow_config: str) -> ConfigWorkflow:
+ITEM_T = typing.TypeVar("ITEM_T")
+
+
+def list_not_empty(value: list[ITEM_T]) -> list[ITEM_T]:
+    if len(value) < 1:
+        msg = "At least one element is required."
+        raise ValueError(msg)
+    return value
+
+
+class CanonicalWorkflow(BaseModel):
+    name: str
+    rootdir: Path
+    cycles: Annotated[list[ConfigCycle], AfterValidator(list_not_empty)]
+    tasks: Annotated[list[ConfigTask], AfterValidator(list_not_empty)]
+    data: ConfigData
+    parameters: dict[str, list[Any]]
+
+    @property
+    def data_dict(self) -> dict[str, ConfigAvailableData | ConfigGeneratedData]:
+        return {data.name: data for data in itertools.chain(self.data.available, self.data.generated)}
+
+    @property
+    def task_dict(self) -> dict[str, ConfigTask]:
+        return {task.name: task for task in self.tasks}
+
+
+def canonicalize_workflow(config_workflow: ConfigWorkflow, rootdir: Path) -> CanonicalWorkflow:
+    if not config_workflow.name:
+        msg = "Workflow name required for canonicalization."
+        raise ValueError(msg)
+    return CanonicalWorkflow(
+        name=config_workflow.name,
+        rootdir=rootdir,
+        cycles=config_workflow.cycles,
+        tasks=config_workflow.tasks,
+        data=config_workflow.data,
+        parameters=config_workflow.parameters,
+    )
+
+
+def load_workflow_config(workflow_config: str) -> CanonicalWorkflow:
     """
     Loads a python representation of a workflow config file.
 
@@ -554,6 +630,7 @@ def load_workflow_config(workflow_config: str) -> ConfigWorkflow:
     if parsed_workflow.name is None:
         parsed_workflow.name = config_path.stem
 
-    parsed_workflow.rootdir = config_path.resolve().parent
+    rootdir = config_path.resolve().parent
 
-    return parsed_workflow
+    return canonicalize_workflow(config_workflow=parsed_workflow, rootdir=rootdir)
+    # return parsed_workflow
