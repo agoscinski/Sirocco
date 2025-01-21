@@ -1,8 +1,7 @@
-import pathlib
 import textwrap
 
-import pydantic
 import pytest
+from pydantic import ValidationError
 
 from sirocco.parsing import _yaml_data_models as models
 
@@ -16,31 +15,15 @@ def test_base_data(data_type):
 
 @pytest.mark.parametrize("data_type", [None, "invalid", 1.42])
 def test_base_data_invalid_type(data_type):
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValidationError):
         _ = models.ConfigBaseData(name="name", src="foo", format="nml")
 
-    with pytest.raises(pydantic.ValidationError):
+    with pytest.raises(ValidationError):
         _ = models.ConfigBaseData(name="name", type=data_type, src="foo", format="nml")
 
 
-def test_workflow_canonicalization():
-    config = models.ConfigWorkflow(
-        name="testee",
-        cycles=[models.ConfigCycle(name="minimal", tasks=[models.ConfigCycleTask(name="a")])],
-        tasks=[models.ConfigShellTask(name="some_task")],
-        data=models.ConfigData(
-            available=[models.ConfigAvailableData(name="foo", type=models.DataType.FILE, src="foo.txt")],
-            generated=[models.ConfigGeneratedData(name="bar", type=models.DataType.DIR, src="bar")],
-        ),
-    )
-
-    testee = models.canonicalize_workflow(config, rootdir=pathlib.Path("foo"))
-    assert testee.data_dict["foo"].name == "foo"
-    assert testee.data_dict["bar"].name == "bar"
-    assert testee.task_dict["some_task"].name == "some_task"
-
-
-def test_load_workflow_config(tmp_path):
+@pytest.fixture
+def minimal_config_path(tmp_path):
     minimal_config = textwrap.dedent(
         """
         cycles:
@@ -63,6 +46,10 @@ def test_load_workflow_config(tmp_path):
     )
     minimal = tmp_path / "minimal.yml"
     minimal.write_text(minimal_config)
-    testee = models.load_workflow_config(str(minimal))
+    return minimal
+
+
+def test_load_workflow_config(minimal_config_path):
+    testee = models.ConfigWorkflow.from_config_file(str(minimal_config_path))
     assert testee.name == "minimal"
-    assert testee.rootdir == tmp_path
+    assert testee.rootdir == minimal_config_path.parent
