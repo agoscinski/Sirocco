@@ -643,7 +643,7 @@ class ConfigWorkflow(BaseModel):
             ...           tasks:
             ...             - task_a:
             ...     tasks:
-            ...       - task_b:
+            ...       - task_a:
             ...           plugin: shell
             ...     data:
             ...       available:
@@ -664,7 +664,7 @@ class ConfigWorkflow(BaseModel):
             ...     name="minimal",
             ...     rootdir=Path("/location/of/config/file"),
             ...     cycles=[ConfigCycle(minimal_cycle={"tasks": [ConfigCycleTask(task_a={})]})],
-            ...     tasks=[ConfigShellTask(task_b={"plugin": "shell"})],
+            ...     tasks=[ConfigShellTask(task_a={"plugin": "shell"})],
             ...     data=ConfigData(
             ...         available=[
             ...             ConfigAvailableData(name="foo", type=DataType.FILE, src="foo.txt")
