@@ -15,7 +15,12 @@ if TYPE_CHECKING:
     from datetime import datetime
     from pathlib import Path
 
-    from sirocco.parsing._yaml_data_models import ConfigBaseData, ConfigCycleTask, ConfigTask, TargetNodesBaseModel
+    from sirocco.parsing._yaml_data_models import (
+        ConfigBaseData,
+        ConfigCycleTask,
+        ConfigTask,
+        TargetNodesBaseModel,
+    )
 
 
 @dataclass

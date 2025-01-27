@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import enum
 import itertools
 import time
 import typing
@@ -25,46 +26,68 @@ from sirocco.parsing._utils import TimeUtils
 
 
 class _NamedBaseModel(BaseModel):
-    """Base class for all classes with a key that specifies their name.
+    """
+    Base model for reading names from yaml keys *or* keyword args to the constructor.
 
-    For example:
+    Reading from key-value pairs in yaml is also supported in order to enable
+    the standard constructor usage from Python, as demonstrated in the below
+    examples. On it's own it is not considered desirable.
 
-    .. yaml
+    Examples:
 
-        - property_name:
-            property: true
+        >>> _NamedBaseModel(name="foo")
+        _NamedBaseModel(name='foo')
 
-    When parsing with this as parent class it is converted to
-    `{"name": "propery_name", "property": True}`.
+        >>> _NamedBaseModel(foo={})
+        _NamedBaseModel(name='foo')
+
+        >>> import pydantic_yaml, textwrap
+        >>> pydantic_yaml.parse_yaml_raw_as(
+        ...     _NamedBaseModel,
+        ...     textwrap.dedent('''
+        ...     foo:
+        ... '''),
+        ... )
+        _NamedBaseModel(name='foo')
+
+        >>> pydantic_yaml.parse_yaml_raw_as(
+        ...     _NamedBaseModel,
+        ...     textwrap.dedent('''
+        ...     name: foo
+        ... '''),
+        ... )
+        _NamedBaseModel(name='foo')
     """
 
     name: str
 
-    def __init__(self, /, **data):
-        super().__init__(**self.merge_name_and_specs(data))
+    @model_validator(mode="before")
+    @classmethod
+    def reformat_named_object(cls, data: Any) -> Any:
+        return cls.extract_merge_name(data)
 
-    @staticmethod
-    def merge_name_and_specs(data: dict) -> dict:
-        """
-        Converts dict of form
-
-        `{my_name: {'spec_0': ..., ..., 'spec_n': ...}`
-
-        to
-
-        `{'name': my_name, 'spec_0': ..., ..., 'spec_n': ...}`
-
-        by copy.
-        """
-        name_and_spec = {}
-        if len(data) != 1:
-            msg = f"Expected dict with one element of the form {{'name': specification}} but got {data}."
-            raise ValueError(msg)
-        name_and_spec["name"] = next(iter(data.keys()))
-        # if no specification specified e.g. "- my_name:"
-        if (spec := next(iter(data.values()))) is not None:
-            name_and_spec.update(spec)
-        return name_and_spec
+    @classmethod
+    def extract_merge_name(cls, data: Any) -> Any:
+        if not isinstance(data, dict):
+            return data
+        if len(data) == 1:
+            key, value = next(iter(data.items()))
+            match key:
+                case str():
+                    match value:
+                        case str() if key == "name":
+                            pass
+                        case dict() if "name" not in value:
+                            data = value | {"name": key}
+                        case None:
+                            data = {"name": key}
+                        case _:
+                            msg = f"{cls.__name__} may only be used for named objects, not values (got {data})."
+                            raise TypeError(msg)
+                case _:
+                    msg = f"{cls.__name__} requires name to be a str (got {key})."
+                    raise TypeError(msg)
+        return data
 
 
 class _WhenBaseModel(BaseModel):
@@ -434,10 +457,15 @@ class ConfigIconTask(ConfigBaseTask, ConfigIconTaskSpecs):
         return namelists
 
 
+class DataType(enum.StrEnum):
+    FILE = enum.auto()
+    DIR = enum.auto()
+
+
 @dataclass
 class ConfigBaseDataSpecs:
-    type: str | None = None
-    src: str | None = None
+    type: DataType
+    src: str
     format: str | None = None
     computer: str | None = None
 
@@ -445,12 +473,31 @@ class ConfigBaseDataSpecs:
 class ConfigBaseData(_NamedBaseModel, ConfigBaseDataSpecs):
     """
     To create an instance of a data defined in a workflow file.
+
+    Examples:
+
+        yaml snippet:
+
+            >>> import textwrap
+            >>> import pydantic_yaml
+            >>> snippet = textwrap.dedent(
+            ...     '''
+            ...       foo:
+            ...         type: "file"
+            ...         src: "foo.txt"
+            ...     '''
+            ... )
+            >>> pydantic_yaml.parse_yaml_raw_as(ConfigBaseData, snippet)
+            ConfigBaseData(type=<DataType.FILE: 'file'>, src='foo.txt', format=None, computer=None, name='foo', parameters=[])
+
+
+        from python:
+
+            >>> ConfigBaseData(name="foo", type=DataType.FILE, src="foo.txt")
+            ConfigBaseData(type=<DataType.FILE: 'file'>, src='foo.txt', format=None, computer=None, name='foo', parameters=[])
     """
 
     parameters: list[str] = []
-    type: str | None = None
-    src: str | None = None
-    format: str | None = None
 
     @field_validator("type")
     @classmethod
@@ -478,7 +525,36 @@ class ConfigGeneratedData(ConfigBaseData):
 
 
 class ConfigData(BaseModel):
-    """To create the container of available and generated data"""
+    """
+    To create the container of available and generated data
+
+    Example:
+
+        yaml snippet:
+
+            >>> import textwrap
+            >>> import pydantic_yaml
+            >>> snippet = textwrap.dedent(
+            ...     '''
+            ...     available:
+            ...       - foo:
+            ...           type: "file"
+            ...           src: "foo.txt"
+            ...     generated:
+            ...       - bar:
+            ...           type: "file"
+            ...           src: "bar.txt"
+            ...     '''
+            ... )
+            >>> data = pydantic_yaml.parse_yaml_raw_as(ConfigData, snippet)
+            >>> assert data.available[0].name == "foo"
+            >>> assert data.generated[0].name == "bar"
+
+        from python:
+
+            >>> ConfigData()
+            ConfigData(available=[], generated=[])
+    """
 
     available: list[ConfigAvailableData] = []
     generated: list[ConfigGeneratedData] = []
@@ -489,7 +565,7 @@ def get_plugin_from_named_base_model(
 ) -> str:
     if isinstance(data, (ConfigRootTask, ConfigShellTask, ConfigIconTask)):
         return data.plugin
-    name_and_specs = _NamedBaseModel.merge_name_and_specs(data)
+    name_and_specs = ConfigBaseTask.extract_merge_name(data)
     if name_and_specs.get("name", None) == "ROOT":
         return ConfigRootTask.plugin
     plugin = name_and_specs.get("plugin", None)
@@ -529,8 +605,12 @@ class ConfigWorkflow(BaseModel):
             ...     data:
             ...       available:
             ...         - foo:
+            ...             type: "file"
+            ...             src: "foo.txt"
             ...       generated:
             ...         - bar:
+            ...             type: "file"
+            ...             src: some_task_output
             ...     '''
             ... )
             >>> wf = pydantic_yaml.parse_yaml_raw_as(ConfigWorkflow, config)
@@ -633,4 +713,3 @@ def load_workflow_config(workflow_config: str) -> CanonicalWorkflow:
     rootdir = config_path.resolve().parent
 
     return canonicalize_workflow(config_workflow=parsed_workflow, rootdir=rootdir)
-    # return parsed_workflow
