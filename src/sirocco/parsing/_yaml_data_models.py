@@ -13,8 +13,8 @@ from typing import Annotated, Any, ClassVar, Literal, Self
 from isoduration import parse_duration
 from isoduration.types import Duration  # pydantic needs type # noqa: TCH002
 from pydantic import (
-    AfterValidator,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Discriminator,
     Field,
@@ -680,8 +680,8 @@ class ConfigWorkflow(BaseModel):
 
     rootdir: Path
     name: str
-    cycles: Annotated[list[ConfigCycle], AfterValidator(list_not_empty)]
-    tasks: Annotated[list[ConfigTask], AfterValidator(list_not_empty)]
+    cycles: Annotated[list[ConfigCycle], BeforeValidator(list_not_empty)]
+    tasks: Annotated[list[ConfigTask], BeforeValidator(list_not_empty)]
     data: ConfigData
     parameters: dict[str, list] = {}
 
