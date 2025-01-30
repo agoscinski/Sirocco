@@ -12,7 +12,8 @@ jobs:
     name: Run with Docker Image
     runs-on: ubuntu-latest
     container:
-      image: iconmodel/icon-dev:latest # TODO can we fix version?
+
+      image: alexgoes/icon-draft # TODO can we fix version?
 
     steps:
       - name: Checkout code
@@ -24,6 +25,7 @@ jobs:
       # Example step: Run custom commands
       - name: Run custom script
         run: |
-          ls -l
-          pwd
-          which icon  # Example command, assuming Python is in the container
+          . /opt/spack/share/spack/setup-env.sh 
+          spack bootstrap now
+          spack load icon
+          which icon
