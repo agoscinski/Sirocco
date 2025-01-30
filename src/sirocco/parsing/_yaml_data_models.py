@@ -475,7 +475,7 @@ class ConfigIconTask(ConfigBaseTask, ConfigIconTaskSpecs):
         master_found = False
         for nml in nmls:
             msg = f"was expecting a dict of length 1 or a string, got {nml}"
-            if not isinstance(nml, (str, dict)):
+            if not isinstance(nml, str | dict):
                 raise TypeError(msg)
             if isinstance(nml, dict) and len(nml) > 1:
                 raise TypeError(msg)
@@ -596,7 +596,7 @@ class ConfigData(BaseModel):
 def get_plugin_from_named_base_model(
     data: dict | ConfigRootTask | ConfigShellTask | ConfigIconTask,
 ) -> str:
-    if isinstance(data, (ConfigRootTask, ConfigShellTask, ConfigIconTask)):
+    if isinstance(data, ConfigRootTask | ConfigShellTask | ConfigIconTask):
         return data.plugin
     name_and_specs = ConfigBaseTask.extract_merge_name(data)
     if name_and_specs.get("name", None) == "ROOT":
@@ -666,7 +666,7 @@ class ConfigWorkflow(BaseModel):
             msg = f"""{param_name}: parameters must map a string to list of single values, got {param_values}"""
             if isinstance(param_values, list):
                 for v in param_values:
-                    if isinstance(v, (dict, list)):
+                    if isinstance(v, dict | list):
                         raise TypeError(msg)
             else:
                 raise TypeError(msg)
