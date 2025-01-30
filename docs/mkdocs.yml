@@ -7,6 +7,9 @@ repo_url: https://github.com/C2SM/WCFlow
 docs_dir: src
 site_dir: build
 
+markdown_extensions:
+  - attr_list
+
 theme:
   name: material
   color_mode: auto
@@ -15,6 +18,7 @@ theme:
 
 nav:
   - Home: index.md
+  - Acknowledgements: acknowledgements.md
 
 
 copyright: Copyright &copy; 2025 by the Sirocco developer team.
