@@ -30,7 +30,7 @@ class Workflow:
         # Function to iterate over date and parameter combinations
         def iter_coordinates(param_refs: list, date: datetime | None = None) -> Iterator[dict]:
             space = ({} if date is None else {"date": [date]}) | {k: workflow_config.parameters[k] for k in param_refs}
-            yield from (dict(zip(space.keys(), x)) for x in product(*space.values()))
+            yield from (dict(zip(space.keys(), x, strict=False)) for x in product(*space.values()))
 
         # 1 - create availalbe data nodes
         for data_config in workflow_config.data.available:
