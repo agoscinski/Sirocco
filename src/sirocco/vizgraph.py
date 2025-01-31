@@ -114,5 +114,5 @@ class VizGraph:
         return cls(workflow.name, workflow.cycles, workflow.data)
 
     @classmethod
-    def from_yaml(cls, config_path: str):
-        return cls.from_core_workflow(Workflow.from_yaml(config_path))
+    def from_config_file(cls, config_path: str):
+        return cls.from_core_workflow(Workflow.from_config_file(config_path))

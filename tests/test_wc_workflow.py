@@ -50,7 +50,7 @@ def config_paths(request):
 
 def test_parse_config_file(config_paths, pprinter):
     reference_str = config_paths["txt"].read_text()
-    test_str = pprinter.format(Workflow.from_yaml(config_paths["yml"]))
+    test_str = pprinter.format(Workflow.from_config_file(config_paths["yml"]))
     if test_str != reference_str:
         new_path = Path(config_paths["txt"]).with_suffix(".new.txt")
         new_path.write_text(test_str)
@@ -61,11 +61,11 @@ def test_parse_config_file(config_paths, pprinter):
 
 @pytest.mark.skip(reason="don't run it each time, uncomment to regenerate serilaized data")
 def test_serialize_workflow(config_paths, pprinter):
-    config_paths["txt"].write_text(pprinter.format(Workflow.from_yaml(config_paths["yml"])))
+    config_paths["txt"].write_text(pprinter.format(Workflow.from_config_file(config_paths["yml"])))
 
 
 def test_vizgraph(config_paths):
-    VizGraph.from_yaml(config_paths["yml"]).draw(file_path=config_paths["svg"])
+    VizGraph.from_config_file(config_paths["yml"]).draw(file_path=config_paths["svg"])
 
 
 # configs that are tested for running workgraph
@@ -85,7 +85,7 @@ def test_run_workgraph(config_path, aiida_computer):
     # some configs reference computer "localhost" which we need to create beforehand
     aiida_computer("localhost").store()
 
-    core_workflow = Workflow.from_yaml(config_path)
+    core_workflow = Workflow.from_config_file(config_path)
     aiida_workflow = AiidaWorkGraph(core_workflow)
     out = aiida_workflow.run()
     assert out.get("execution_count", None).value == 1
@@ -98,7 +98,7 @@ def test_run_workgraph(config_path, aiida_computer):
 )
 def test_nml_mod(config_paths, tmp_path):
     nml_refdir = config_paths["txt"].parent / "ICON_namelists"
-    wf = Workflow.from_yaml(config_paths["yml"])
+    wf = Workflow.from_config_file(config_paths["yml"])
     # Create core mamelists
     for task in wf.tasks:
         if isinstance(task, IconTask):
@@ -121,7 +121,7 @@ def test_nml_mod(config_paths, tmp_path):
 )
 def test_serialize_nml(config_paths):
     nml_refdir = config_paths["txt"].parent / "ICON_namelists"
-    wf = Workflow.from_yaml(config_paths["yml"])
+    wf = Workflow.from_config_file(config_paths["yml"])
     for task in wf.tasks:
         if isinstance(task, IconTask):
             task.create_workflow_namelists(folder=nml_refdir)

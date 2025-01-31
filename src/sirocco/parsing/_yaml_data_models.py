@@ -8,13 +8,13 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from io import StringIO
 from pathlib import Path
-from typing import Annotated, Any, ClassVar, Literal
+from typing import Annotated, Any, ClassVar, Literal, Self
 
 from isoduration import parse_duration
 from isoduration.types import Duration  # pydantic needs type # noqa: TCH002
 from pydantic import (
-    AfterValidator,
     BaseModel,
+    BeforeValidator,
     ConfigDict,
     Discriminator,
     Field,
@@ -26,6 +26,15 @@ from pydantic import (
 from ruamel.yaml import YAML
 
 from sirocco.parsing._utils import TimeUtils
+
+ITEM_T = typing.TypeVar("ITEM_T")
+
+
+def list_not_empty(value: list[ITEM_T]) -> list[ITEM_T]:
+    if len(value) < 1:
+        msg = "At least one element is required."
+        raise ValueError(msg)
+    return value
 
 
 class _NamedBaseModel(BaseModel):
@@ -625,37 +634,54 @@ class ConfigWorkflow(BaseModel):
         minimal yaml to generate:
 
             >>> import textwrap
-            >>> config = textwrap.dedent(
+            >>> content = textwrap.dedent(
             ...     '''
+            ...     name: minimal
+            ...     rootdir: /location/of/config/file
             ...     cycles:
             ...       - minimal_cycle:
             ...           tasks:
             ...             - task_a:
             ...     tasks:
-            ...       - task_b:
+            ...       - task_a:
             ...           plugin: shell
             ...     data:
             ...       available:
             ...         - foo:
-            ...             type: "file"
-            ...             src: "foo.txt"
+            ...             type: file
+            ...             src: foo.txt
             ...       generated:
             ...         - bar:
-            ...             type: "file"
-            ...             src: some_task_output
+            ...             type: dir
+            ...             src: bar
             ...     '''
             ... )
-            >>> wf = validate_yaml_content(ConfigWorkflow, config)
+            >>> wf = validate_yaml_content(ConfigWorkflow, content)
 
         minimum programmatically created instance
 
-            >>> empty_wf = ConfigWorkflow(cycles=[], tasks=[], data={})
+            >>> wf = ConfigWorkflow(
+            ...     name="minimal",
+            ...     rootdir=Path("/location/of/config/file"),
+            ...     cycles=[ConfigCycle(minimal_cycle={"tasks": [ConfigCycleTask(task_a={})]})],
+            ...     tasks=[ConfigShellTask(task_a={"plugin": "shell"})],
+            ...     data=ConfigData(
+            ...         available=[
+            ...             ConfigAvailableData(name="foo", type=DataType.FILE, src="foo.txt")
+            ...         ],
+            ...         generated=[
+            ...             ConfigGeneratedData(name="bar", type=DataType.DIR, src="bar")
+            ...         ],
+            ...     ),
+            ...     parameters={},
+            ... )
 
     """
 
-    name: str | None = None
-    cycles: list[ConfigCycle]
-    tasks: list[ConfigTask]
+    rootdir: Path
+    name: str
+    cycles: Annotated[list[ConfigCycle], BeforeValidator(list_not_empty)]
+    tasks: Annotated[list[ConfigTask], BeforeValidator(list_not_empty)]
     data: ConfigData
     parameters: dict[str, list] = {}
 
@@ -682,67 +708,27 @@ class ConfigWorkflow(BaseModel):
                     raise ValueError(msg)
         return self
 
+    @classmethod
+    def from_config_file(cls, config_path: str) -> Self:
+        """Creates a ConfigWorkflow instance from a config file, a yaml with the workflow definition.
 
-ITEM_T = typing.TypeVar("ITEM_T")
+        Args:
+            config_path (str): The path of the config file to load from.
 
-
-def list_not_empty(value: list[ITEM_T]) -> list[ITEM_T]:
-    if len(value) < 1:
-        msg = "At least one element is required."
-        raise ValueError(msg)
-    return value
-
-
-class CanonicalWorkflow(BaseModel):
-    name: str
-    rootdir: Path
-    cycles: Annotated[list[ConfigCycle], AfterValidator(list_not_empty)]
-    tasks: Annotated[list[ConfigTask], AfterValidator(list_not_empty)]
-    data: ConfigData
-    parameters: dict[str, list[Any]]
-
-    @property
-    def data_dict(self) -> dict[str, ConfigAvailableData | ConfigGeneratedData]:
-        return {data.name: data for data in itertools.chain(self.data.available, self.data.generated)}
-
-    @property
-    def task_dict(self) -> dict[str, ConfigTask]:
-        return {task.name: task for task in self.tasks}
-
-
-def canonicalize_workflow(config_workflow: ConfigWorkflow, rootdir: Path) -> CanonicalWorkflow:
-    if not config_workflow.name:
-        msg = "Workflow name required for canonicalization."
-        raise ValueError(msg)
-    return CanonicalWorkflow(
-        name=config_workflow.name,
-        rootdir=rootdir,
-        cycles=config_workflow.cycles,
-        tasks=config_workflow.tasks,
-        data=config_workflow.data,
-        parameters=config_workflow.parameters,
-    )
-
-
-def load_workflow_config(workflow_config: str) -> CanonicalWorkflow:
-    """
-    Loads a python representation of a workflow config file.
-
-    :param workflow_config: the string to the config yaml file containing the workflow definition
-    """
-    config_path = Path(workflow_config)
-
-    content = config_path.read_text()
-
-    parsed_workflow = validate_yaml_content(ConfigWorkflow, content)
-
-    # If name was not specified, then we use filename without file extension
-    if parsed_workflow.name is None:
-        parsed_workflow.name = config_path.stem
-
-    rootdir = config_path.resolve().parent
-
-    return canonicalize_workflow(config_workflow=parsed_workflow, rootdir=rootdir)
+        Returns:
+            OBJECT_T: An instance of the specified class type with data parsed and
+            validated from the YAML content.
+        """
+        config_path_ = Path(config_path)
+        content = config_path_.read_text()
+        reader = YAML(typ="safe", pure=True)
+        object_ = reader.load(StringIO(content))
+        # If name was not specified, then we use filename without file extension
+        if "name" not in object_:
+            object_["name"] = config_path_.stem
+        object_["rootdir"] = config_path_.resolve().parent
+        adapter = TypeAdapter(cls)
+        return adapter.validate_python(object_)
 
 
 OBJECT_T = typing.TypeVar("OBJECT_T")
