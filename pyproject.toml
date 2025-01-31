@@ -74,7 +74,11 @@ include = [
 [tool.hatch.version]
 path = "src/sirocco/__init__.py"
 
+[tool.hatch.envs.default]
+installer = "uv"
+
 [tool.hatch.envs.hatch-test]
+installer = "uv"
 extra-dependencies = [
     "ipdb"
 ]
@@ -85,6 +89,7 @@ extra-args = ["--doctest-modules"]
 python = ["3.12"]
 
 [tool.hatch.envs.docs]
+installer = "uv"
 description = "Build the documentation"
 extra-dependencies = [
     "mkdocs-material",
