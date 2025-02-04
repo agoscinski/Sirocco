@@ -122,9 +122,9 @@ class _WhenBaseModel(BaseModel):
 
     @field_validator("before", "after", "at", mode="before")
     @classmethod
-    def convert_datetime(cls, value) -> datetime:
-        if value is None:
-            return None
+    def convert_datetime(cls, value: datetime | str | None) -> datetime | None:
+        if value is None or isinstance(value, datetime):
+            return value
         return datetime.fromisoformat(value)
 
 
@@ -192,53 +192,46 @@ class ConfigCycleTaskOutput(_NamedBaseModel):
     """
 
 
+NAMED_BASE_T = typing.TypeVar("NAMED_BASE_T", bound=_NamedBaseModel)
+
+
+def make_named_model_list_converter(
+    cls: type[NAMED_BASE_T],
+) -> typing.Callable[[list[NAMED_BASE_T | str | dict] | None], list[NAMED_BASE_T]]:
+    def convert_named_model_list(values: list[NAMED_BASE_T | str | dict] | None) -> list[NAMED_BASE_T]:
+        inputs: list[NAMED_BASE_T] = []
+        if values is None:
+            return inputs
+        for value in values:
+            match value:
+                case str():
+                    inputs.append(cls(name=value))
+                case dict():
+                    inputs.append(cls(**value))
+                case _NamedBaseModel():
+                    inputs.append(value)
+                case _:
+                    msg = "Unsupported Type"
+                    raise TypeError(msg)
+        return inputs
+
+    return convert_named_model_list
+
+
 class ConfigCycleTask(_NamedBaseModel):
     """
     To create an instance of a task in a cycle defined in a workflow file.
     """
 
-    inputs: list[ConfigCycleTaskInput | str] | None = Field(default_factory=list)
-    outputs: list[ConfigCycleTaskOutput | str] | None = Field(default_factory=list)
-    wait_on: list[ConfigCycleTaskWaitOn | str] | None = Field(default_factory=list)
-
-    @field_validator("inputs", mode="before")
-    @classmethod
-    def convert_cycle_task_inputs(cls, values) -> list[ConfigCycleTaskInput]:
-        inputs = []
-        if values is None:
-            return inputs
-        for value in values:
-            if isinstance(value, str):
-                inputs.append({value: None})
-            elif isinstance(value, dict):
-                inputs.append(value)
-        return inputs
-
-    @field_validator("outputs", mode="before")
-    @classmethod
-    def convert_cycle_task_outputs(cls, values) -> list[ConfigCycleTaskOutput]:
-        outputs = []
-        if values is None:
-            return outputs
-        for value in values:
-            if isinstance(value, str):
-                outputs.append({value: None})
-            elif isinstance(value, dict):
-                outputs.append(value)
-        return outputs
-
-    @field_validator("wait_on", mode="before")
-    @classmethod
-    def convert_cycle_task_wait_on(cls, values) -> list[ConfigCycleTaskWaitOn]:
-        wait_on = []
-        if values is None:
-            return wait_on
-        for value in values:
-            if isinstance(value, str):
-                wait_on.append({value: None})
-            elif isinstance(value, dict):
-                wait_on.append(value)
-        return wait_on
+    inputs: Annotated[
+        list[ConfigCycleTaskInput], BeforeValidator(make_named_model_list_converter(ConfigCycleTaskInput))
+    ] = []
+    outputs: Annotated[
+        list[ConfigCycleTaskOutput], BeforeValidator(make_named_model_list_converter(ConfigCycleTaskOutput))
+    ] = []
+    wait_on: Annotated[
+        list[ConfigCycleTaskWaitOn], BeforeValidator(make_named_model_list_converter(ConfigCycleTaskWaitOn))
+    ] = []
 
 
 class ConfigCycle(_NamedBaseModel):
