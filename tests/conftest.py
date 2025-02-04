@@ -1,5 +1,4 @@
 import pathlib
-import typing
 
 import pytest
 
@@ -31,12 +30,12 @@ ALL_CONFIG_CASES = ["small", "parameters", "large"]
 
 
 @pytest.fixture(params=ALL_CONFIG_CASES)
-def config_case(request) -> typing.Iterator[str]:
+def config_case(request) -> str:
     return request.param
 
 
 @pytest.fixture
-def pprinter() -> typing.Iterator[pretty_print.PrettyPrinter]:
+def pprinter() -> pretty_print.PrettyPrinter:
     return pretty_print.PrettyPrinter()
 
 
@@ -49,7 +48,7 @@ def generate_config_paths(test_case: str):
 
 
 @pytest.fixture
-def config_paths(config_case) -> typing.Iterator[dict[str, pathlib.Path]]:
+def config_paths(config_case) -> dict[str, pathlib.Path]:
     return generate_config_paths(config_case)
 
 
