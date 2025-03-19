@@ -10,7 +10,7 @@ from pygraphviz import AGraph
 
 if TYPE_CHECKING:
     from sirocco.core.graph_items import Store
-from sirocco.core import Workflow
+from sirocco import core
 
 
 def hsv_to_hex(h: float, s: float, v: float) -> str:
@@ -43,7 +43,7 @@ class VizGraph:
         self.name = name
         self.agraph = AGraph(name=name, fontname="Fira Sans", newrank=True)
         for data_node in data:
-            gv_kw = self.data_av_node_kw if data_node.available else self.data_gen_node_kw
+            gv_kw = self.data_av_node_kw if isinstance(data_node, core.AvailableData) else self.data_gen_node_kw
             self.agraph.add_node(data_node, tooltip=self.tooltip(data_node), label=data_node.name, **gv_kw)
 
         k = 1
@@ -56,8 +56,7 @@ class VizGraph:
                 self.agraph.add_node(
                     task_node, label=task_node.name, tooltip=self.tooltip(task_node), **self.task_node_kw
                 )
-                # NOTE: _ stands for the unsued port name
-                for data_node, _ in task_node.inputs:
+                for data_node in task_node.input_data_nodes():
                     self.agraph.add_edge(data_node, task_node, **self.io_edge_kw)
                 for data_node in task_node.outputs:
                     self.agraph.add_edge(task_node, data_node, **self.io_edge_kw)
@@ -110,9 +109,9 @@ class VizGraph:
         svg.write(file_path)
 
     @classmethod
-    def from_core_workflow(cls, workflow: Workflow):
+    def from_core_workflow(cls, workflow: core.Workflow):
         return cls(workflow.name, workflow.cycles, workflow.data)
 
     @classmethod
     def from_config_file(cls, config_path: str):
-        return cls.from_core_workflow(Workflow.from_config_file(config_path))
+        return cls.from_core_workflow(core.Workflow.from_config_file(config_path))

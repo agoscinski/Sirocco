@@ -59,13 +59,9 @@ class IconTask(models.ConfigIconTaskSpecs, Task):
                 "experimentStopDate": self.cycle_point.stop_date.isoformat() + "Z",
             }
         )
-        self.core_namelists["icon_master.namelist"]["master_nml"]["lrestart"] = any(
-            # NOTE: in_data[0] contains the actual data node and in_data[1] the port name
-            in_data[1] == "restart"
-            for in_data in self.inputs
-        )
+        self.core_namelists["icon_master.namelist"]["master_nml"]["lrestart"] = bool(self.inputs["restart"])
 
-    def dump_core_namelists(self, folder=None):
+    def dump_core_namelists(self, folder: str | Path | None = None):
         if folder is not None:
             folder = Path(folder)
             folder.mkdir(parents=True, exist_ok=True)

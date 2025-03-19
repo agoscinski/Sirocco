@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import itertools
+import re
 import time
 import typing
 from dataclasses import dataclass, field
@@ -160,7 +161,7 @@ class TargetNodesBaseModel(_NamedBaseModel):
 
 
 class ConfigCycleTaskInput(TargetNodesBaseModel):
-    port: str | None = None
+    port: str
 
 
 class ConfigCycleTaskWaitOn(TargetNodesBaseModel):
@@ -273,58 +274,66 @@ class ConfigRootTask(ConfigBaseTask):
     plugin: ClassVar[Literal["_root"]] = "_root"
 
 
-# By using a frozen class we only need to validate on initialization
-@dataclass(frozen=True)
-class ShellCliArgument:
-    """A holder for a CLI argument to simplify access.
-
-    Stores CLI arguments of the form "file", "--init", "{file}" or "{--init file}". These examples translate into
-    ShellCliArguments ShellCliArgument(name="file", references_data_item=False, cli_option_of_data_item=None),
-    ShellCliArgument(name="--init", references_data_item=False, cli_option_of_data_item=None),
-    ShellCliArgument(name="file", references_data_item=True, cli_option_of_data_item=None),
-    ShellCliArgument(name="file", references_data_item=True, cli_option_of_data_item="--init")
-
-    Attributes:
-        name: Name of the argument. For the examples it is "file", "--init", "file" and "file"
-        references_data_item: Specifies if the argument references a data item signified by enclosing it by curly
-            brackets.
-        cli_option_of_data_item: The CLI option associated to the data item.
-    """
-
-    name: str
-    references_data_item: bool
-    cli_option_of_data_item: str | None = None
-
-    def __post_init__(self):
-        if self.cli_option_of_data_item is not None and not self.references_data_item:
-            msg = "data_item_option cannot be not None if cli_option_of_data_item is False"
-            raise ValueError(msg)
-
-    @classmethod
-    def from_cli_argument(cls, arg: str) -> ShellCliArgument:
-        len_arg_with_option = 2
-        len_arg_no_option = 1
-        references_data_item = arg.startswith("{") and arg.endswith("}")
-        # remove curly brackets "{--init file}" -> "--init file"
-        arg_unwrapped = arg[1:-1] if arg.startswith("{") and arg.endswith("}") else arg
-
-        # "--init file" -> ["--init", "file"]
-        input_arg = arg_unwrapped.split()
-        if len(input_arg) != len_arg_with_option and len(input_arg) != len_arg_no_option:
-            msg = f"Expected argument of format {{data}} or {{option data}} but found {arg}"
-            raise ValueError(msg)
-        name = input_arg[0] if len(input_arg) == len_arg_no_option else input_arg[1]
-        cli_option_of_data_item = input_arg[0] if len(input_arg) == len_arg_with_option else None
-        return cls(name, references_data_item, cli_option_of_data_item)
-
-
 @dataclass(kw_only=True)
 class ConfigShellTaskSpecs:
     plugin: ClassVar[Literal["shell"]] = "shell"
-    command: str = ""
-    cli_arguments: list[ShellCliArgument] = field(default_factory=list)
-    env_source_files: list[str] = field(default_factory=list)
+    port_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"{PORT(\[sep=.+\])?::(.+?)}"), repr=False)
+    sep_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"\[sep=(.+)\]"), repr=False)
     src: str | None = None
+    command: str
+    env_source_files: list[str] = field(default_factory=list)
+
+    def resolve_ports(self, input_labels: dict[str, list[str]]) -> str:
+        """Replace port placeholders in command string with provided input labels.
+
+        Returns a string corresponding to self.command with "{PORT::port_name}"
+        placeholders replaced by the content provided in the input_labels dict.
+        When multiple input nodes are linked to a single port (e.g. with
+        parameterized data or if the `when` keyword specifies a list of lags or
+        dates), the provided input labels are inserted with a separator
+        defaulting to a " ". Specifying an alternative separator, e.g. a comma,
+        is done via "{PORT[sep=,]::port_name}"
+
+        Examples:
+
+            >>> task_specs = ConfigShellTaskSpecs(
+            ...     command="./my_script {PORT::positionals} -l -c --verbose 2 --arg {PORT::my_arg}"
+            ... )
+            >>> task_specs.resolve_ports(
+            ...     {"positionals": ["input_1", "input_2"], "my_arg": ["input_3"]}
+            ... )
+            './my_script input_1 input_2 -l -c --verbose 2 --arg input_3'
+
+            >>> task_specs = ConfigShellTaskSpecs(
+            ...     command="./my_script {PORT::positionals} --multi_arg {PORT[sep=,]::multi_arg}"
+            ... )
+            >>> task_specs.resolve_ports(
+            ...     {"positionals": ["input_1", "input_2"], "multi_arg": ["input_3", "input_4"]}
+            ... )
+            './my_script input_1 input_2 --multi_arg input_3,input_4'
+
+            >>> task_specs = ConfigShellTaskSpecs(
+            ...     command="./my_script --input {PORT[sep= --input ]::repeat_input}"
+            ... )
+            >>> task_specs.resolve_ports({"repeat_input": ["input_1", "input_2", "input_3"]})
+            './my_script --input input_1 --input input_2 --input input_3'
+        """
+        cmd = self.command
+        for port_match in self.port_pattern.finditer(cmd):
+            if (port_name := port_match.group(2)) is None:
+                msg = f"Wrong port specification: {port_match.group(0)}"
+                raise ValueError(msg)
+            if (sep := port_match.group(1)) is None:
+                arg_sep = " "
+            else:
+                if (sep_match := self.sep_pattern.match(sep)) is None:
+                    msg = "Wrong separator specification: sep"
+                    raise ValueError(msg)
+                if (arg_sep := sep_match.group(1)) is None:
+                    msg = "Wrong separator specification: sep"
+                    raise ValueError(msg)
+            cmd = cmd.replace(port_match.group(0), arg_sep.join(input_labels[port_name]))
+        return cmd
 
 
 class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
@@ -340,74 +349,25 @@ class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
         ...         '''
         ...     my_task:
         ...       plugin: shell
-        ...       command: my_script.sh
-        ...       src: post_run_scripts
-        ...       cli_arguments: "-n 1024 {current_sim_output}"
+        ...       command: "my_script.sh -n 1024 {PORT::current_sim_output}"
+        ...       src: post_run_scripts/my_script.sh
         ...       env_source_files: "env.sh"
         ...       walltime: 00:01:00
         ...     '''
         ...     ),
         ... )
-        >>> my_task.cli_arguments[0]
-        ShellCliArgument(name='-n', references_data_item=False, cli_option_of_data_item=None)
-        >>> my_task.cli_arguments[1]
-        ShellCliArgument(name='1024', references_data_item=False, cli_option_of_data_item=None)
-        >>> my_task.cli_arguments[2]
-        ShellCliArgument(name='current_sim_output', references_data_item=True, cli_option_of_data_item=None)
         >>> my_task.env_source_files
         ['env.sh']
         >>> my_task.walltime.tm_min
         1
     """
 
-    command: str = ""
-    cli_arguments: list[ShellCliArgument] = Field(default_factory=list)
     env_source_files: list[str] = Field(default_factory=list)
-
-    @field_validator("cli_arguments", mode="before")
-    @classmethod
-    def validate_cli_arguments(cls, value: str) -> list[ShellCliArgument]:
-        return cls.parse_cli_arguments(value)
 
     @field_validator("env_source_files", mode="before")
     @classmethod
     def validate_env_source_files(cls, value: str | list[str]) -> list[str]:
         return [value] if isinstance(value, str) else value
-
-    @staticmethod
-    def split_cli_arguments(cli_arguments: str) -> list[str]:
-        """Splits the CLI arguments into a list of separate entities.
-
-        Splits the CLI arguments by whitespaces except if the whitespace is contained within curly brackets. For example
-        the string
-        "-D --CMAKE_CXX_COMPILER=${CXX_COMPILER} {--init file}"
-        will be splitted into the list
-        ["-D", "--CMAKE_CXX_COMPILER=${CXX_COMPILER}", "{--init file}"]
-        """
-
-        nb_open_curly_brackets = 0
-        last_split_idx = 0
-        splits = []
-        for i, char in enumerate(cli_arguments):
-            if char == " " and not nb_open_curly_brackets:
-                # we ommit the space in the splitting therefore we only store up to i but move the last_split_idx to i+1
-                splits.append(cli_arguments[last_split_idx:i])
-                last_split_idx = i + 1
-            elif char == "{":
-                nb_open_curly_brackets += 1
-            elif char == "}":
-                if nb_open_curly_brackets == 0:
-                    msg = f"Invalid input for cli_arguments. Found a closing curly bracket before an opening in {cli_arguments!r}"
-                    raise ValueError(msg)
-                nb_open_curly_brackets -= 1
-
-        if last_split_idx != len(cli_arguments):
-            splits.append(cli_arguments[last_split_idx : len(cli_arguments)])
-        return splits
-
-    @staticmethod
-    def parse_cli_arguments(cli_arguments: str) -> list[ShellCliArgument]:
-        return [ShellCliArgument.from_cli_argument(arg) for arg in ConfigShellTask.split_cli_arguments(cli_arguments)]
 
 
 @dataclass(kw_only=True)
@@ -662,6 +622,7 @@ class ConfigWorkflow(BaseModel):
             ...     tasks:
             ...       - task_a:
             ...           plugin: shell
+            ...           command: "some_command"
             ...     data:
             ...       available:
             ...         - foo:
@@ -681,7 +642,9 @@ class ConfigWorkflow(BaseModel):
             ...     name="minimal",
             ...     rootdir=Path("/location/of/config/file"),
             ...     cycles=[ConfigCycle(minimal_cycle={"tasks": [ConfigCycleTask(task_a={})]})],
-            ...     tasks=[ConfigShellTask(task_a={"plugin": "shell"})],
+            ...     tasks=[
+            ...         ConfigShellTask(task_a={"plugin": "shell", "command": "some_command"})
+            ...     ],
             ...     data=ConfigData(
             ...         available=[
             ...             ConfigAvailableData(name="foo", type=DataType.FILE, src="foo.txt")
