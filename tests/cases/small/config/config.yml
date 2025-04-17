@@ -34,10 +34,10 @@ cycles:
 tasks:
   - icon:
       computer: localhost
-      plugin: shell
-      src: scripts/icon.py
-      command: "icon.py --restart {PORT::restart} --init {PORT::init}"
-      env_source_files: data/dummy_source_file.sh
+      plugin: icon
+      namelists:
+        - ./ICON/icon_master.namelist
+        #- ./ICON/model.namelist
   - cleanup:
       computer: localhost
       plugin: shell

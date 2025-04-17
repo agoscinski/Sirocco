@@ -261,6 +261,39 @@ class AiidaWorkGraph:
 
         self._aiida_task_nodes[label] = workgraph_task
 
+    @create_task_node.register
+    def _create_icon_task_node(self, task: core.IconTask):
+        IconCalculation = aiida.plugins.CalculationFactory('icon.icon')
+        task_label = self.get_aiida_label_from_graph_item(task)
+
+        try:
+            icon_code = aiida.orm.load_code("icon")
+        except NotExistent as exc:
+            raise ValueError(f"Could not find the code {icon} in AiiDA. Did you create it beforehand?") from exc
+
+        icon_task = self._workgraph.add_task(IconCalculation, code=icon_code)
+        self._aiida_task_nodes[task_label] = icon_task
+
+        task.init_core_namelists()
+        task.update_core_namelists_from_config()
+        task.update_core_namelists_from_workflow()
+        import io
+
+        output_stream = io.StringIO()
+        task.core_master_namelist.write(output_stream)
+        content = output_stream.getvalue()
+        icon_task.inputs.master_namelist.value = aiida.orm.SinglefileData.from_string(content, "icon_master.namelist")
+
+        # TODO do we update model namelist internally at some point?
+        #name = task.core_model_namelist.name
+        #output_stream = io.StringIO()
+        #suffix = ("_".join([str(p) for p in task.coordinates.values()])).replace(" ", "_")
+        #filename = name + "_" + suffix
+        #icon_task.inputs.model_namelist.value = aiida.orm.SinglefileData.from_string(task.core_model_namelist.write(output_stream).getvalue(), filename)
+
+        icon_task.inputs.model_namelist.value = aiida.orm.SinglefileData(self.get_data_full_path(task.model_namelist.path))
+
+
     def _link_output_node_to_task(self, task: core.Task, output: core.Data):
         """Links the output to the workgraph task."""
 

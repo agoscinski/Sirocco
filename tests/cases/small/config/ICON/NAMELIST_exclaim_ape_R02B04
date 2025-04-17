@@ -11,7 +11,7 @@
 
 ! grid_nml: horizontal grid --------------------------------------------------
 &grid_nml
- dynamics_grid_filename      =                   " ./icon_grid_0013_R02B04_R.nc" ! array of the grid filenames for the dycore
+ dynamics_grid_filename      =                   "icon_grid_0013_R02B04_R.nc" ! array of the grid filenames for the dycore
  lredgrid_phys               =                      .FALSE.        ! .true.=radiation is calculated on a reduced grid
 /
 
