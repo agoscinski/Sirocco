@@ -5,12 +5,9 @@
 &master_time_control_nml
  calendar             = 'proleptic gregorian'
  experimentStartDate  = '2000-01-01T00:00:00Z'
- experimentStopDate   = '2000-01-01T00:00:30Z'
- restartTimeIntval    = 'PT2S'
- checkpointTimeIntval = 'PT30S'
-/
-&time_nml
- is_relative_time     = .false.
+ restartTimeIntval    = 'P1D'
+ checkpointTimeIntval = 'P1D'
+ experimentStopDate = '2000-01-01T00:00:30Z'
 /
 &master_model_nml
   model_name="atm"

@@ -56,9 +56,9 @@ class VizGraph:
                 self.agraph.add_node(
                     task_node, label=task_node.name, tooltip=self.tooltip(task_node), **self.task_node_kw
                 )
-                for data_node in task_node.input_data_nodes():
+                for _, data_node in task_node.input_data_nodes():
                     self.agraph.add_edge(data_node, task_node, **self.io_edge_kw)
-                for data_node in task_node.outputs:
+                for data_node in task_node.outputs.values():
                     self.agraph.add_edge(task_node, data_node, **self.io_edge_kw)
                     cluster_nodes.append(data_node)
                 for wait_task_node in task_node.wait_on:

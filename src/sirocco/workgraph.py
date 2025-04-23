@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+import uuid 
+import io
 import functools
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, TypeAlias
 
 import aiida.common
 import aiida.orm
-import aiida_workgraph.engine.utils  # type: ignore[import-untyped]
+import aiida_workgraph.tasks.factory.shelljob_task # type: ignore[import-untyped]
+
 from aiida.common.exceptions import NotExistent
 from aiida_workgraph import WorkGraph
 
@@ -23,50 +26,56 @@ if TYPE_CHECKING:
 # aiida-workgraph properly would require significant changes see issues
 # https://github.com/aiidateam/aiida-workgraph/issues/168 The function is a copy of the original function in
 # aiida-workgraph. The modifications are marked by comments.
-def _prepare_for_shell_task(task: dict, inputs: dict) -> dict:
-    """Prepare the inputs for ShellJob"""
-    import inspect
-
-    from aiida_shell.launch import prepare_shell_job_inputs
-
-    # Retrieve the signature of `prepare_shell_job_inputs` to determine expected input parameters.
-    signature = inspect.signature(prepare_shell_job_inputs)
-    aiida_shell_input_keys = signature.parameters.keys()
-
-    # Iterate over all WorkGraph `inputs`, and extract the ones which are expected by `prepare_shell_job_inputs`
-    inputs_aiida_shell_subset = {key: inputs[key] for key in inputs if key in aiida_shell_input_keys}
-
-    try:
-        aiida_shell_inputs = prepare_shell_job_inputs(**inputs_aiida_shell_subset)
-    except ValueError:  # noqa: TRY302
-        raise
-
-    # We need to remove the original input-keys, as they might be offending for the call to `launch_shell_job`
-    # E.g., `inputs` originally can contain `command`, which gets, however, transformed to #
-    # `code` by `prepare_shell_job_inputs`
-    for key in inputs_aiida_shell_subset:
-        inputs.pop(key)
-
-    # Finally, we update the original `inputs` with the modified ones from the call to `prepare_shell_job_inputs`
-    inputs = {**inputs, **aiida_shell_inputs}
-
-    inputs.setdefault("metadata", {})
-    inputs["metadata"].update({"call_link_label": task["name"]})
-
-    # Workaround starts here
-    # This part is part of the workaround. We need to manually add the outputs from the task.
-    # Because kwargs are not populated with outputs
-    default_outputs = {"remote_folder", "remote_stash", "retrieved", "_outputs", "_wait", "stdout", "stderr"}
-    task_outputs = set(task["outputs"].keys())
-    task_outputs = task_outputs.union(set(inputs.pop("outputs", [])))
-    missing_outputs = task_outputs.difference(default_outputs)
-    inputs["outputs"] = list(missing_outputs)
-    # Workaround ends here
-
-    return inputs
-
-
-aiida_workgraph.engine.utils.prepare_for_shell_task = _prepare_for_shell_task
+#def _prepare_for_shell_task(inputs: dict) -> dict:
+#    """Prepare the inputs for ShellJob"""
+#    from aiida_shell.launch import prepare_shell_job_inputs
+#    import inspect
+#
+#    # Retrieve the signature of `prepare_shell_job_inputs` to determine expected input parameters.
+#    signature = inspect.signature(prepare_shell_job_inputs)
+#    aiida_shell_input_keys = signature.parameters.keys()
+#
+#    # Iterate over all WorkGraph `inputs`, and extract the ones which are expected by `prepare_shell_job_inputs`
+#    inputs_aiida_shell_subset = {
+#        key: inputs[key] for key in inputs.keys() if key in aiida_shell_input_keys
+#    }
+#    # if parser in inputs, and the parser is a dict
+#    parser = inputs_aiida_shell_subset.get("parser", None)
+#    if isinstance(parser, dict):
+#        inputs_aiida_shell_subset["parser"] = NodeExecutor(**parser).executor
+#
+#    try:
+#        aiida_shell_inputs = prepare_shell_job_inputs(**inputs_aiida_shell_subset)
+#    except ValueError:
+#        raise
+#
+#    # We need to remove the original input-keys, as they might be offending for the call to `launch_shell_job`
+#    # E.g., `inputs` originally can contain `command`, which gets, however, transformed to #
+#    # `code` by `prepare_shell_job_inputs`
+#    for key in inputs_aiida_shell_subset.keys():
+#        inputs.pop(key)
+#
+#    # Finally, we update the original `inputs` with the modified ones from the call to `prepare_shell_job_inputs`
+#    inputs = {**inputs, **aiida_shell_inputs}
+#
+#    inputs.setdefault("metadata", {})
+#
+#    # Workaround starts here
+#    # This part is part of the workaround. We need to manually add the outputs from the task.
+#    # Because kwargs are not populated with outputs
+#    #breakpoint()
+#    #default_outputs = {"remote_folder", "remote_stash", "retrieved", "_outputs", "_wait", "stdout", "stderr"}
+#    #task_outputs = set(task["outputs"].keys())
+#    #task_outputs = task_outputs.union(set(inputs.pop("outputs", [])))
+#    #missing_outputs = task_outputs.difference(default_outputs)
+#    #inputs["outputs"] = list(missing_outputs)
+#    # Workaround ends here
+#
+#    return inputs
+#
+#
+#
+#aiida_workgraph.tasks.factory.shelljob_task.prepare_for_shell_task = _prepare_for_shell_task
 
 
 class AiidaWorkGraph:
@@ -87,19 +96,23 @@ class AiidaWorkGraph:
         # create input data nodes
         for data in self._core_workflow.data:
             if isinstance(data, core.AvailableData):
+                # TODO here we do not have the date available that is required for init
+                #      need to iterater first cycle
+                # TODO check why this did not already make the tests crash
+                #      should have been caught earlier
                 self._add_aiida_input_data_node(data)
 
         # create workgraph task nodes and output sockets
         for task in self._core_workflow.tasks:
             self.create_task_node(task)
             # Create and link corresponding output sockets
-            for output in task.outputs:
-                self._link_output_node_to_task(task, output)
+            for port, output in task.outputs.items():
+                self._link_output_node_to_task(task, port, output)
 
         # link input nodes to workgraph tasks
         for task in self._core_workflow.tasks:
-            for input_ in task.input_data_nodes():
-                self._link_input_node_to_task(task, input_)
+            for port, input_ in task.input_data_nodes():
+                self._link_input_node_to_task(task, port, input_)
 
         # set shelljob arguments
         for task in self._core_workflow.tasks:
@@ -118,13 +131,13 @@ class AiidaWorkGraph:
             except ValueError as exception:
                 msg = f"Raised error when validating task name '{task.name}': {exception.args[0]}"
                 raise ValueError(msg) from exception
-            for input_ in task.input_data_nodes():
+            for _, input_ in task.input_data_nodes():
                 try:
                     aiida.common.validate_link_label(input_.name)
                 except ValueError as exception:
                     msg = f"Raised error when validating input name '{input_.name}': {exception.args[0]}"
                     raise ValueError(msg) from exception
-            for output in task.outputs:
+            for output in task.outputs.values():
                 try:
                     aiida.common.validate_link_label(output.name)
                 except ValueError as exception:
@@ -149,10 +162,30 @@ class AiidaWorkGraph:
         The graph item object is uniquely determined by its name and its coordinates. There is the possibility that
         through the replacement of invalid chars in the coordinates duplication can happen but it is unlikely.
         """
+        
         return cls.replace_invalid_chars_in_label(
             f"{obj.name}" + "__".join(f"_{key}_{value}" for key, value in obj.coordinates.items())
         )
 
+    @classmethod
+    def get_aiida_label_from_available_data(cls, obj: core.GraphItem) -> str:
+        """Returns a unique AiiDA label for the given available data.
+
+        TODO adapt doc, does ignore coordinates as it is not generated
+             For available data we ignore coordinates, because the only coordinate
+             they support is date and this one is just expressing their usage
+             the datetime is just the usage time but not when they are generated
+             since they are there since the beginning. Since we do not now when available
+             data nodes are used, the date can be arbitrary
+             Somehow need to make this logic more explicit in core
+
+        The graph item object is uniquely determined by its name and its coordinates. There is the possibility that
+        through the replacement of invalid chars in the coordinates duplication can happen but it is unlikely.
+        """
+        
+        return cls.replace_invalid_chars_in_label(
+            f"{obj.name}"
+        )
     @staticmethod
     def split_cmd_arg(command_line: str) -> tuple[str, str]:
         split = command_line.split(sep=" ", maxsplit=1)
@@ -164,8 +197,15 @@ class AiidaWorkGraph:
     def label_placeholder(cls, data: core.Data) -> str:
         return f"{{{cls.get_aiida_label_from_graph_item(data)}}}"
 
+    # TODO reimplement both methods below with dispatching
+
+    # TODO name confusing because it is not from core but from the already created workflow
     def data_from_core(self, core_available_data: core.AvailableData) -> WorkgraphDataNode:
-        return self._aiida_data_nodes[self.get_aiida_label_from_graph_item(core_available_data)]
+        return self._aiida_data_nodes[self.get_aiida_label_from_available_data(core_available_data)]
+
+    # TODO implement this
+    #def data_to_core(self, core_available_data: core.AvailableData) -> WorkgraphDataNode:
+    #    return self._aiida_data_nodes[self.get_aiida_label_from_graph_item(core_available_data)]
 
     def socket_from_core(self, core_generated_data: core.GeneratedData) -> TaskSocket:
         return self._aiida_socket_nodes[self.get_aiida_label_from_graph_item(core_generated_data)]
@@ -184,8 +224,7 @@ class AiidaWorkGraph:
         Create an `aiida.orm.Data` instance from the provided graph item.
         """
         label = self.get_aiida_label_from_graph_item(data)
-        data_path = Path(data.src)
-        data_full_path = data.src if data_path.is_absolute() else self._core_workflow.config_rootdir / data_path
+        data_full_path = str(data.src) if data.src.is_absolute() else self._core_workflow.config_rootdir / data.src
 
         if data.computer is not None:
             try:
@@ -193,7 +232,7 @@ class AiidaWorkGraph:
             except NotExistent as err:
                 msg = f"Could not find computer {data.computer!r} for input {data}."
                 raise ValueError(msg) from err
-            self._aiida_data_nodes[label] = aiida.orm.RemoteData(remote_path=data.src, label=label, computer=computer)
+            self._aiida_data_nodes[label] = aiida.orm.RemoteData(remote_path=str(data.src), label=label, computer=computer)
         elif data.type == "file":
             self._aiida_data_nodes[label] = aiida.orm.SinglefileData(label=label, file=data_full_path)
         elif data.type == "dir":
@@ -251,7 +290,7 @@ class AiidaWorkGraph:
         # we create the task. Instead, they are being updated via the WG internals when linking inputs/outputs to
         # tasks
         workgraph_task = self._workgraph.add_task(
-            "ShellJob",
+            "workgraph.shelljob",
             name=label,
             command=command,
             arguments="",
@@ -261,28 +300,94 @@ class AiidaWorkGraph:
 
         self._aiida_task_nodes[label] = workgraph_task
 
+
+    def _get_localhost_computer(self) -> aiida.orm.Computer:
+        """Return a :class:`aiida.orm.computers.Computer` instance.
+
+        The database is queried for an existing computer with the given label. If it exists, it means it was probably
+        created by this fixture in a previous call and it is simply returned. Otherwise a new instance is created.
+        Note that the computer is not explicitly configured, unless ``configure_kwargs`` are specified.
+
+        :param label: The computer label. If not specified, a random UUID4 is used.
+        :param minimum_job_poll_interval: The default minimum job poll interval to set.
+        :param configuration_kwargs: Optional keyword arguments that, if defined, are used to configure the computer
+            by calling :meth:`aiida.orm.computers.Computer.configure`.
+        :param kwargs: Optional keyword arguments that are passed to the :class:`aiida.orm.computers.Computer`
+            constructor if a computer with the given label doesn't already exist.
+        :return: A stored computer instance.
+        """
+        label="localhost"
+        import tempfile
+
+        try:
+            computer = aiida.orm.Computer.collection.get(label=label)
+        except NotExistent:
+            computer = aiida.orm.Computer(
+                label=label,
+                description="Local computer",
+                hostname='localhost',
+                workdir=tempfile.mkdtemp(), # TODO what is put here?
+                transport_type='core.local',
+                scheduler_type='core.direct',
+            )
+            computer.store()
+            computer.set_minimum_job_poll_interval(5) # TODO why in aiida-core tests this is 0? Is this ignored for core.direct?
+            computer.set_default_mpiprocs_per_machine(1) # TODO I think user args we set this when submitting, also aiida has some automatic detection need to check this
+
+        return computer
+
     @create_task_node.register
     def _create_icon_task_node(self, task: core.IconTask):
         IconCalculation = aiida.plugins.CalculationFactory('icon.icon')
         task_label = self.get_aiida_label_from_graph_item(task)
 
-        try:
-            icon_code = aiida.orm.load_code("icon")
-        except NotExistent as exc:
-            raise ValueError(f"Could not find the code {icon} in AiiDA. Did you create it beforehand?") from exc
+        if task.computer is None:
+            computer = self._get_localhost_computer()
+        else:
+            try:
+                computer = aiida.orm.Computer.collection.get(label=task.computer)
+            except NotExistent:
+                raise ValueError(f"Could not find computer {task.computer!r} in AiiDA database. One needs to create and configure the computer before running a workflow.")
 
-        icon_task = self._workgraph.add_task(IconCalculation, code=icon_code)
+
+        label_uuid = str(uuid.uuid4())
+        icon_code = aiida.orm.InstalledCode(
+            label=f"icon-{label_uuid}", # PR COMMENT create always new code
+            description="aiida_icon",
+            default_calc_job_plugin="icon.icon",
+            computer=computer,
+            filepath_executable=str(task.src),
+            with_mpi=True # TODO need to install icon with mpi so we do not determine this parameter smartly
+        ).store()
+
+        #builder = icon_code.get_builder()
+        #builder.master_namelist = aiida.orm.SinglefileData(inputs_path / "icon_master.namelist")
+        #builder.model_namelist = aiida.orm.SinglefileData(inputs_path / "model.namelist")
+        #builder.dynamics_grid_file = make_remote(remote_path=str(inputs_path / "icon_grid_simple.nc"))
+        #builder.ecrad_data = make_remote(remote_path=str(inputs_path / "ecrad_data"))
+        #builder.rrtmg_sw = make_remote(remote_path=str(inputs_path / "rrtmg_sw.nc"))
+        #builder.cloud_opt_props = make_remote(remote_path=str(inputs_path / "ECHAM6_CldOptProps.nc"))
+        #builder.dmin_wetgrowth_lookup = make_remote(remote_path=str(inputs_path / "dmin_wetgrowth_lookup.nc"))
+
+        builder = IconCalculation.get_builder()
+        builder.code = icon_code
+
+
+        # This needs to be moved
+        #setattr(workgraph_task.inputs, f"{port}", self.data_from_core(input_))
+
+        task.update_namelists_from_workflow() # updates datetime
+        with io.StringIO() as buffer:
+            task.master_namelist.content.write(buffer)
+            buffer.seek(0)
+            builder.master_namelist = aiida.orm.SinglefileData(buffer, task.master_namelist.name)
+
+        with io.StringIO() as buffer:
+            task.model_namelist.content.write(buffer)
+            buffer.seek(0)
+            builder.model_namelist = aiida.orm.SinglefileData(buffer, task.model_namelist.name)
+        icon_task = self._workgraph.add_task(builder)
         self._aiida_task_nodes[task_label] = icon_task
-
-        task.init_core_namelists()
-        task.update_core_namelists_from_config()
-        task.update_core_namelists_from_workflow()
-        import io
-
-        output_stream = io.StringIO()
-        task.core_master_namelist.write(output_stream)
-        content = output_stream.getvalue()
-        icon_task.inputs.master_namelist.value = aiida.orm.SinglefileData.from_string(content, "icon_master.namelist")
 
         # TODO do we update model namelist internally at some point?
         #name = task.core_model_namelist.name
@@ -291,10 +396,19 @@ class AiidaWorkGraph:
         #filename = name + "_" + suffix
         #icon_task.inputs.model_namelist.value = aiida.orm.SinglefileData.from_string(task.core_model_namelist.write(output_stream).getvalue(), filename)
 
-        icon_task.inputs.model_namelist.value = aiida.orm.SinglefileData(self.get_data_full_path(task.model_namelist.path))
+        #data_full_path = data.src if data_path.is_absolute() else self._core_workflow.config_rootdir / data_path
+        #icon_task.inputs.model_namelist.value = aiida.orm.SinglefileData(self.get_data_full_path(task.model_namelist.path))
 
 
-    def _link_output_node_to_task(self, task: core.Task, output: core.Data):
+    @functools.singledispatchmethod
+    def _link_output_node_to_task(self, task: core.Task, port: str, output: core.Data):  # noqa: ARG002
+        """Dispatch linking input to task based on task type."""
+
+        msg = f"method not implemented for task type {type(task)}"
+        raise NotImplementedError(msg)
+
+    @_link_output_node_to_task.register
+    def _link_output_node_to_shell_task(self, task: core.ShellTask, _: str, output: core.Data):
         """Links the output to the workgraph task."""
 
         workgraph_task = self.task_from_core(task)
@@ -302,15 +416,22 @@ class AiidaWorkGraph:
         output_socket = workgraph_task.add_output("workgraph.any", output.src)
         self._aiida_socket_nodes[output_label] = output_socket
 
+    @_link_output_node_to_task.register
+    def _link_output_node_to_icon_task(self, task: core.IconTask, port: str, output: core.Data):
+        workgraph_task = self.task_from_core(task)
+        output_label = self.get_aiida_label_from_graph_item(output)
+        output_socket = workgraph_task.outputs._sockets.get(port)
+        self._aiida_socket_nodes[output_label] = output_socket
+
     @functools.singledispatchmethod
-    def _link_input_node_to_task(self, task: core.Task, input_: core.Data):  # noqa: ARG002
+    def _link_input_node_to_task(self, task: core.Task, port: str, input_: core.Data):  # noqa: ARG002
         """ "Dispatch linking input to task based on task type"""
 
         msg = f"method not implemented for task type {type(task)}"
         raise NotImplementedError(msg)
 
     @_link_input_node_to_task.register
-    def _link_input_node_to_shelltask(self, task: core.ShellTask, input_: core.Data):
+    def _link_input_node_to_shell_task(self, task: core.ShellTask, _: str, input_: core.Data):
         """Links the input to the workgraph shell task."""
 
         workgraph_task = self.task_from_core(task)
@@ -326,6 +447,20 @@ class AiidaWorkGraph:
             socket.value = self.data_from_core(input_)
         elif isinstance(input_, core.GeneratedData):
             self._workgraph.add_link(self.socket_from_core(input_), workgraph_task.inputs[f"nodes.{input_label}"])
+        else:
+            raise TypeError
+
+    @_link_input_node_to_task.register
+    def _link_input_node_to_icon_task(self, task: core.IconTask, port: str, input_: core.Data):
+        """Links the input to the workgraph shell task."""
+
+        workgraph_task = self.task_from_core(task)
+
+        # resolve data
+        if isinstance(input_, core.AvailableData):
+            setattr(workgraph_task.inputs, f"{port}", self.data_from_core(input_))
+        elif isinstance(input_, core.GeneratedData):
+            setattr(workgraph_task.inputs, f"{port}", self.socket_from_core(input_))
         else:
             raise TypeError
 
@@ -354,8 +489,11 @@ class AiidaWorkGraph:
         self,
         inputs: None | dict[str, Any] = None,
         metadata: None | dict[str, Any] = None,
-    ) -> dict[str, Any]:
-        return self._workgraph.run(inputs=inputs, metadata=metadata)
+    ) -> dict[str, Any] | None:
+        out = self._workgraph.run(inputs=inputs, metadata=metadata)
+        if out is None:
+            raise RuntimeError("Something went wrong when running workgraph. Please look at the logs.")
+        return out
 
     def submit(
         self,

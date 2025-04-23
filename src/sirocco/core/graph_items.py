@@ -53,6 +53,7 @@ class Data(ConfigBaseDataSpecs, GraphItem):
             name=config.name,
             type=config.type,
             src=config.src,
+            computer=config.computer,
             coordinates=coordinates,
         )
 
@@ -73,7 +74,7 @@ class Task(ConfigBaseTaskSpecs, GraphItem):
     color: ClassVar[Color] = field(default="light_red", repr=False)
 
     inputs: dict[str, list[Data]] = field(default_factory=dict)
-    outputs: list[Data] = field(default_factory=list)
+    outputs:  dict[str, Data] = field(default_factory=dict)
     wait_on: list[Task] = field(default_factory=list)
     config_rootdir: Path
     cycle_point: CyclePoint
@@ -87,8 +88,9 @@ class Task(ConfigBaseTaskSpecs, GraphItem):
             raise ValueError(msg)
         Task.plugin_classes[cls.plugin] = cls
 
-    def input_data_nodes(self) -> Iterator[Data]:
-        yield from chain(*self.inputs.values())
+    def input_data_nodes(self) -> Iterator[tuple[str, Data]]:
+        for key, data_list in self.inputs.items():
+            yield from ((key, data) for data in data_list)
 
     @classmethod
     def from_config(
@@ -102,15 +104,18 @@ class Task(ConfigBaseTaskSpecs, GraphItem):
     ) -> Task:
         inputs: dict[str, list[Data]] = {}
         for input_spec in graph_spec.inputs:
-            if input_spec.port not in inputs:
+            if input_spec.port not in inputs: # TODO fishy
                 inputs[input_spec.port] = []
+            #somehow coordinates are not added
             inputs[input_spec.port].extend(datastore.iter_from_cycle_spec(input_spec, coordinates))
-        outputs = [datastore[output_spec.name, coordinates] for output_spec in graph_spec.outputs]
+            
+
+        outputs = {output_spec.port: datastore[output_spec.name, coordinates] for output_spec in graph_spec.outputs}
         if (plugin_cls := Task.plugin_classes.get(type(config).plugin, None)) is None:
             msg = f"Plugin {type(config).plugin!r} is not supported."
             raise ValueError(msg)
 
-        new = plugin_cls.build_from_config(
+        new = plugin_cls._build_from_config(
             config,
             config_rootdir=config_rootdir,
             coordinates=coordinates,
@@ -126,13 +131,33 @@ class Task(ConfigBaseTaskSpecs, GraphItem):
 
         return new
 
+    # PR COMMENT: made private to reduce public API, to reduce required tests
     @classmethod
-    def build_from_config(cls: type[Self], config: ConfigTask, **kwargs: Any) -> Self:
+    def _build_from_config(cls: type[Self], config: ConfigTask, **kwargs: Any) -> Self:
         config_kwargs = dict(config)
         del config_kwargs["parameters"]
+
         return cls(**kwargs, **config_kwargs)
 
+    def __post_init__(self):
+        self.src = self._validate_path(self.src)
+        for _, input_ in self.input_data_nodes():
+            if isinstance(input_, AvailableData):
+                input_.src = self._validate_path(input_.src)
+    
+    def _validate_path(self, path: Path) -> Path:
+        if path.is_relative_to("."): 
+            path = self.config_rootdir / path
+        if not path.exists():
+            raise FileNotFoundError(f"Icon executable in source {path} does not exist.")
+        if not path.is_file():
+            raise ValueError(f"Icon executable in source {path} is not file.")
+        return path
+
     def link_wait_on_tasks(self, taskstore: Store[Task]) -> None:
+        """
+        TODO add doc
+        """
         self.wait_on = list(
             chain(
                 *(
@@ -141,7 +166,7 @@ class Task(ConfigBaseTaskSpecs, GraphItem):
                 )
             )
         )
-
+    
 
 @dataclass(kw_only=True)
 class Cycle(GraphItem):

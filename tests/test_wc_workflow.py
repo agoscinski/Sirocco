@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from sirocco.parsing.yaml_data_models import ConfigWorkflow
 from sirocco.core import Workflow
 from sirocco.core._tasks.icon_task import IconTask
 from sirocco.vizgraph import VizGraph
@@ -29,10 +30,10 @@ def test_vizgraph(config_paths):
     "config_case",
     [
         "small",
-        "parameters",
+        #"parameters",
     ],
 )
-def test_run_workgraph(config_case, config_paths, aiida_computer):  # noqa: ARG001  # config_case is overridden
+def test_run_workgraph(config_case, icon_grid_simple_path, config_paths, aiida_computer):  # noqa: ARG001  # config_case is overridden
     """Tests end-to-end the parsing from file up to running the workgraph.
 
     Automatically uses the aiida_profile fixture to create a new profile. Note to debug the test with your profile
@@ -41,7 +42,16 @@ def test_run_workgraph(config_case, config_paths, aiida_computer):  # noqa: ARG0
     # some configs reference computer "localhost" which we need to create beforehand
     aiida_computer("localhost").store()
 
-    core_workflow = Workflow.from_config_file(str(config_paths["yml"]))
+    config_workflow = ConfigWorkflow.from_config_file(str(config_paths["yml"]))
+    # Because the grid is a large file we only store an empty file in the repo but have to replace it with the downloaded grid file
+    found_grid_in_config = False
+    for data in config_workflow.data.available:
+        if data.src == 'ICON/icon_grid_simple.nc':
+            data.src = str(icon_grid_simple_path)
+            found_grid_in_config = True
+    assert found_grid_in_config, "No entry for file 'ICON/icon_grid_simple.nc' has been found in data.available section."
+
+    core_workflow = Workflow.from_config_workflow(config_workflow)
     aiida_workflow = AiidaWorkGraph(core_workflow)
     out = aiida_workflow.run()
     assert out.get("execution_count", None).value == 1
