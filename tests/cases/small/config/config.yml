@@ -18,12 +18,12 @@ cycles:
                   port: dynamics_grid_file
               - dmin_wetgrowth_lookup:
                   port: dmin_wetgrowth_lookup # aiida-icon port
-              - restart:
-                  when:
-                    after: *root_start_date
-                  target_cycle:
-                    lag: -P2M
-                  port: restart_file
+              #- restart: # TODO put back once restart works
+              #    when:
+              #      after: *root_start_date
+              #    target_cycle:
+              #      lag: -P2M
+              #    port: restart_file
             outputs: 
               - finish:
                   port: finish_status

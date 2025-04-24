@@ -489,11 +489,11 @@ class AiidaWorkGraph:
         self,
         inputs: None | dict[str, Any] = None,
         metadata: None | dict[str, Any] = None,
-    ) -> dict[str, Any] | None:
-        out = self._workgraph.run(inputs=inputs, metadata=metadata)
-        if out is None:
-            raise RuntimeError("Something went wrong when running workgraph. Please look at the logs.")
-        return out
+    ) -> aiida.orm.Node:
+        self._workgraph.run(inputs=inputs, metadata=metadata)
+        if (output_node := self._workgraph.process) is None:
+            raise RuntimeError("Something went wrong when running workgraph. Please contact a developer.")
+        return output_node
 
     def submit(
         self,
@@ -502,5 +502,8 @@ class AiidaWorkGraph:
         wait: bool = False,
         timeout: int = 60,
         metadata: None | dict[str, Any] = None,
-    ) -> dict[str, Any]:
-        return self._workgraph.submit(inputs=inputs, wait=wait, timeout=timeout, metadata=metadata)
+    ) -> aiida.orm.Node:
+        self._workgraph.submit(inputs=inputs, wait=wait, timeout=timeout, metadata=metadata)
+        if (output_node := self._workgraph.process) is None:
+            raise RuntimeError("Something went wrong when running workgraph. Please contact a developer.")
+        return output_node

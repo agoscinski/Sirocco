@@ -173,6 +173,7 @@ class IconTask(models.ConfigIconTaskSpecs, Task):
             },
             'master_nml': {
                 "lrestart": self.is_restart
+                "read_restart_namelists": self.is_restart # PR COMMENT not sure @matthieu
             }
         })
 
