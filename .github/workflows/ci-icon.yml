@@ -1,0 +1,31 @@
+name: Icon
+
+on:
+  push:
+    # only pushes to main trigger
+    branches: [main]
+  pull_request:
+    # always triggered
+
+jobs:
+  run-docker-image:
+    name: Run with Docker Image
+    runs-on: ubuntu-latest
+    container:
+
+      image: alexgoes/icon-draft # TODO can we fix version?
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run inside Docker container
+        run: echo "Hello from inside the iconmodel/icon-dev container"
+
+      # Example step: Run custom commands
+      - name: Run custom script
+        run: |
+          . /opt/spack/share/spack/setup-env.sh 
+          spack bootstrap now
+          spack load icon
+          which icon
