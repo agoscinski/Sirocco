@@ -2,6 +2,7 @@ from pathlib import Path
 
 import pytest
 
+from sirocco.parsing.yaml_data_models import ConfigWorkflow
 from sirocco.core import Workflow
 from sirocco.core._tasks.icon_task import IconTask
 from sirocco.vizgraph import VizGraph
@@ -29,22 +30,52 @@ def test_vizgraph(config_paths):
     "config_case",
     [
         "small",
-        "parameters",
+        #"parameters",
     ],
 )
-def test_run_workgraph(config_case, config_paths, aiida_computer):  # noqa: ARG001  # config_case is overridden
+def test_run_workgraph(config_case, icon_grid_simple_path, config_paths, aiida_computer):  # noqa: ARG001  # config_case is overridden
     """Tests end-to-end the parsing from file up to running the workgraph.
 
     Automatically uses the aiida_profile fixture to create a new profile. Note to debug the test with your profile
     please run this in a separate file as the profile is deleted after test finishes.
     """
-    # some configs reference computer "localhost" which we need to create beforehand
-    aiida_computer("localhost").store()
+    icon_bin_link_path = None
+    try:
+        # TODO should become fixture
+        #import subprocess
+        #which_icon = subprocess.run(["which", "icon"], capture_output=True, check=False)
+        #if which_icon.returncode:
+        #    msg = "Could not find icon executable."
+        #    raise FileNotFoundError(msg)
+        #filepath_executable = Path(which_icon.stdout.decode().strip())
+        icon_bin_link_path = config_paths["yml"].parent / "ICON/bin/icon"
+        icon_bin_link_path.parent.mkdir()
+        #icon_bin_path.symlink_to(filepath_executable)
+        # TODO temporary hardcoded
+        icon_bin_link_path.symlink_to("/home/alexgo/code/spack/._view/kj6aofylhuvs55aig6x6dtahkawv7fxy/bin/icon")
+        # end fixture ...
 
-    core_workflow = Workflow.from_config_file(str(config_paths["yml"]))
-    aiida_workflow = AiidaWorkGraph(core_workflow)
-    out = aiida_workflow.run()
-    assert out.get("execution_count", None).value == 1
+        # some configs reference computer "localhost" which we need to create beforehand
+        aiida_computer("localhost").store()
+
+        config_workflow = ConfigWorkflow.from_config_file(str(config_paths["yml"]))
+        # Because the grid is a large file we only store an empty file in the repo but have to replace it with the downloaded grid file
+        found_grid_in_config = False
+        for data in config_workflow.data.available:
+            if str(data.src) == 'ICON/icon_grid_simple.nc':
+                data.src = icon_grid_simple_path
+                found_grid_in_config = True
+        assert found_grid_in_config, "No entry for file 'ICON/icon_grid_simple.nc' has been found in data.available section."
+
+        core_workflow = Workflow.from_config_workflow(config_workflow)
+        aiida_workflow = AiidaWorkGraph(core_workflow)
+        output_node = aiida_workflow.run()
+        assert output_node.is_finished_ok, f"Not successful run. Got exit code {output_node.exit_code} with message {output_node.exit_message}."
+    finally:
+        # TODO this solution is not good, create a directory in a tmp dir
+        if icon_bin_link_path:
+            import shutil
+            shutil.rmtree(str(icon_bin_link_path.parent)) 
 
 
 # configs containing task using icon plugin

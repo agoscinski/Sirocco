@@ -112,3 +112,35 @@ def pytest_configure(config):
             wf = workflow.Workflow.from_config_file(str(config_paths["yml"]))
             serialize_worklfow(config_paths=config_paths, workflow=wf)
             serialize_nml(config_paths=config_paths, workflow=wf)
+
+#import request
+#def download_file(url: str, file_path: pathlib.Path):
+#    response = requests.get(url)
+#    if not response.ok:
+#        raise DownloadError(url, response)
+#
+#    file_path.write_bytes(response.content)
+#
+#
+#@pytest.fixture(scope="module")
+#def icon_grid_simple_path(pytestconfig):
+#    url = "http://icon-downloads.mpimet.mpg.de/grids/public/edzw/icon_grid_0013_R02B04_R.nc"
+#    filename = "icon_grid_simple.nc"
+#    cache_dir = pytestconfig.cache.mkdir("downloaded_files")
+#    icon_grid_path = cache_dir / filename
+#
+#    # Check if the file is already cached
+#    if icon_grid_path.exists():
+#        LOGGER.info("Found icon grid in cache, reusing it.")
+#    else:
+#        # File is not cached, download and save it
+#        LOGGER.info("Downloading and caching icon grid.")
+#        download_file(url, icon_grid_path)
+#
+#    return icon_grid_path
+
+
+@pytest.fixture(scope="module")
+def icon_grid_simple_path(pytestconfig):
+    # TODO replace with above
+    return pathlib.Path("ICON/icon_grid_simple.nc")

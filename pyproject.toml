@@ -31,7 +31,9 @@ dependencies = [
   "pydantic",
   "ruamel.yaml",
   "aiida-core>=2.5",
-  "aiida-workgraph==0.4.10",
+  "aiida-workgraph==0.5.2",
+  #"aiida-icon>=0.4.0",
+  "aiida-icon @ git+https://github.com/agoscinski/aiida-icon.git@icon-ci",
   "termcolor",
   "pygraphviz",
   "lxml",
@@ -132,6 +134,9 @@ extra-dependencies = [
 
 [tool.hatch.envs.types.scripts]
 check = "mypy --no-incremental {args:.}"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [[tool.mypy.overrides]]
 module = ["isoduration", "isoduration.*"]

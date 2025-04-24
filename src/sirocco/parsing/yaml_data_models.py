@@ -172,6 +172,7 @@ class ConfigCycleTaskOutput(_NamedBaseModel):
     """
     To create an instance of an output in a task in a cycle defined in a workflow file.
     """
+    port: str
 
 
 NAMED_BASE_T = typing.TypeVar("NAMED_BASE_T", bound=_NamedBaseModel)
@@ -279,7 +280,7 @@ class ConfigShellTaskSpecs:
     plugin: ClassVar[Literal["shell"]] = "shell"
     port_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"{PORT(\[sep=.+\])?::(.+?)}"), repr=False)
     sep_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"\[sep=(.+)\]"), repr=False)
-    src: str | None = None
+    src: Path | None = None
     command: str
     env_source_files: list[str] = field(default_factory=list)
 
@@ -371,7 +372,7 @@ class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
 
 
 @dataclass(kw_only=True)
-class NamelistSpec:
+class NamelistSpec: # TODO inconsistent should be called ConfigNamelistSpecs
     """Class for namelist specifications
 
     - path is the path to the namelist file considered as template
@@ -389,7 +390,7 @@ class NamelistSpec:
     """
 
     path: Path
-    specs: dict[str, Any] = field(default_factory=dict)
+    specs: dict[str, Any] = Field(default_factory=dict)
 
 
 class ConfigNamelist(BaseModel, NamelistSpec):
@@ -418,7 +419,7 @@ class ConfigNamelist(BaseModel, NamelistSpec):
         >>> no_spec_yml = validate_yaml_content(ConfigNamelist, "/path/to/some.nml")
     """
 
-    specs: dict[str, Any] = {}
+    #specs: dict[str, Any] = {} # PR COMMENT should come from NamelistSpec
 
     @model_validator(mode="before")
     @classmethod
@@ -435,10 +436,12 @@ class ConfigNamelist(BaseModel, NamelistSpec):
 @dataclass(kw_only=True)
 class ConfigIconTaskSpecs:
     plugin: ClassVar[Literal["icon"]] = "icon"
-    namelists: dict[str, NamelistSpec]
+    namelists: list[ConfigNamelist]
+    src: Path # TODO also in ConfigShellTaskSpecs but not None, maybe we can merge? I also don't see why its there None
 
 
-class ConfigIconTask(ConfigBaseTask):
+# TODO why do we again not inherit from ConfigIconTaskSpecs? Inconsistent!
+class ConfigIconTask(ConfigBaseTask, ConfigIconTaskSpecs):
     """Class representing an ICON task configuration from a workflow file
 
     Examples:
@@ -460,8 +463,11 @@ class ConfigIconTask(ConfigBaseTask):
         >>> icon_task_cfg = validate_yaml_content(ConfigIconTask, snippet)
     """
 
-    plugin: ClassVar[Literal["icon"]] = "icon"
-    namelists: list[ConfigNamelist]
+    @model_validator(mode='after')
+    def validate_src(self):
+        if self.computer is not None and self.src.is_relative_to("."):
+           raise ValueError(f"Icon task src must be absolute path if run on a specified machine, but got relative path '{self.src}'") 
+        return self
 
     @field_validator("namelists", mode="after")
     @classmethod
@@ -482,7 +488,7 @@ class DataType(enum.StrEnum):
 @dataclass(kw_only=True)
 class ConfigBaseDataSpecs:
     type: DataType
-    src: str
+    src: Path # TODO make more consistent also Path
     format: str | None = None
     computer: str | None = None
 
