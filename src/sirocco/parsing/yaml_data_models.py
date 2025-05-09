@@ -373,7 +373,7 @@ class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
 
 
 @dataclass(kw_only=True)
-class NamelistSpec:
+class ConfigNamelistFileSpec:
     """Class for namelist specifications
 
     - path is the path to the namelist file considered as template
@@ -383,29 +383,24 @@ class NamelistSpec:
     Example:
 
         >>> path = "/some/path/to/icon.nml"
-        >>> specs = {
-        ...     "first_nml_block": {"first_param": "a string value", "second_param": 0},
-        ...     "second_nml_block": {"third_param": False},
-        ... }
-        >>> nml_info = NamelistSpec(path=path, specs=specs)
+        >>> nml_info = ConfigNamelistFileSpec(path=Path(path))
     """
 
-    path: Path
-    specs: dict[str, Any] = field(default_factory=dict)
+    path: Path = field(repr=False)
 
 
-class ConfigNamelist(BaseModel, NamelistSpec):
+class ConfigNamelistFile(BaseModel, ConfigNamelistFileSpec):
     """
     Validated namelist specifications.
 
     Example:
 
         >>> import textwrap
-        >>> from_init = ConfigNamelist(
+        >>> from_init = ConfigNamelistFile(
         ...     path="/path/to/some.nml", specs={"block": {"key": "value"}}
         ... )
         >>> from_yml = validate_yaml_content(
-        ...     ConfigNamelist,
+        ...     ConfigNamelistFile,
         ...     textwrap.dedent(
         ...         '''
         ...         /path/to/some.nml:
@@ -416,11 +411,11 @@ class ConfigNamelist(BaseModel, NamelistSpec):
         ... )
         >>> from_init == from_yml
         True
-        >>> no_spec = ConfigNamelist(path="/path/to/some.nml")
-        >>> no_spec_yml = validate_yaml_content(ConfigNamelist, "/path/to/some.nml")
+        >>> no_spec = ConfigNamelistFile(path="/path/to/some.nml")
+        >>> no_spec_yml = validate_yaml_content(ConfigNamelistFile, "/path/to/some.nml")
     """
 
-    specs: dict[str, Any] = {}
+    specs: dict[str, Any] = field(default_factory=dict)
 
     @model_validator(mode="before")
     @classmethod
@@ -437,7 +432,6 @@ class ConfigNamelist(BaseModel, NamelistSpec):
 @dataclass(kw_only=True)
 class ConfigIconTaskSpecs:
     plugin: ClassVar[Literal["icon"]] = "icon"
-    namelists: dict[str, NamelistSpec]
 
 
 class ConfigIconTask(ConfigBaseTask):
@@ -463,11 +457,11 @@ class ConfigIconTask(ConfigBaseTask):
     """
 
     plugin: ClassVar[Literal["icon"]] = "icon"
-    namelists: list[ConfigNamelist]
+    namelists: list[ConfigNamelistFile]
 
     @field_validator("namelists", mode="after")
     @classmethod
-    def check_nmls(cls, nmls: list[ConfigNamelist]) -> list[ConfigNamelist]:
+    def check_nmls(cls, nmls: list[ConfigNamelistFile]) -> list[ConfigNamelistFile]:
         # Make validator idempotent even if not used yet
         names = [nml.path.name for nml in nmls]
         if "icon_master.namelist" not in names:
