@@ -1,0 +1,15 @@
+include:
+  - remote: 'https://gitlab.com/cscs-ci/recipes/-/raw/master/templates/v2/.ci-ext.yml'
+
+job:
+  extends: .f7t-controller
+  script:
+    - FIRECREST_URL=https://api.cscs.ch/cw/firecrest/v1
+    - CLUSTER=santis
+    - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
+    - pip install --upgrade pip
+    - pip install . 
+    - verdi presto --profile-name "cscs-ci"
+    - verdi computer setup --label santis-firecrest --hostname unused --transport firecrest --scheduler firecrest -n 
+    - verdi computer configure firecrest santis-firecrest --url $FIRECREST_URL --token-uri https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $CLUSTER --temp-directory /tmp
+    - verdi computer test santis-firecrest
