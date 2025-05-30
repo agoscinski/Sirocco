@@ -1,7 +1,6 @@
 import logging
 import pathlib
 import subprocess
-import tempfile
 
 import pytest
 import requests
@@ -59,16 +58,10 @@ def icon_filepath_executable() -> str:
 
 
 @pytest.fixture(scope="session")
-def session_tmp_path():
-    temp_dir = tempfile.TemporaryDirectory()
-    yield pathlib.Path(temp_dir.name)
-    temp_dir.cleanup()
-
-
-@pytest.fixture(scope="session")
-def available_datas(session_tmp_path):
+def available_datas(tmp_path_factory):
+    tmp_path = tmp_path_factory.mktemp("data")
     available_datas = [
-        models.ConfigAvailableData(name="available", type=models.DataType.FILE, src=(session_tmp_path / "foo.txt"))
+        models.ConfigAvailableData(name="available", type=models.DataType.FILE, src=(tmp_path / "foo.txt"))
     ]
     # validation in core representation requires that available data exists
     for available_data in available_datas:
