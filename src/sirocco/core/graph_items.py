@@ -62,7 +62,7 @@ class AvailableData(Data):
 
     @classmethod
     def from_config(cls, config: ConfigBaseData, config_rootdir: Path, coordinates: dict) -> Self:
-        src = cls._validate_src(config.name, config.src, config_rootdir)
+        src = cls._validate_src(config.src, config_rootdir)
         return cls(
             name=config.name,
             computer=config.computer,
@@ -72,21 +72,14 @@ class AvailableData(Data):
         )
 
     @staticmethod
-    def _validate_src(name: str, config_src: Path | None, config_rootdir: Path | None = None) -> Path | None:
+    def _validate_src(config_src: Path | None, config_rootdir: Path | None = None) -> Path | None:
         if config_src is None:
             return None
         if config_rootdir is None and not config_src.is_absolute():
             msg = f"Cannot specify relative path {config_src} for namelist while the rootdir is None"
             raise ValueError(msg)
 
-        src = config_src if config_rootdir is None else (config_rootdir / config_src)
-        if not src.exists():
-            msg = f"Data {name} in path {src} does not exist."
-            raise FileNotFoundError(msg)
-        if not src.is_file():
-            msg = f"Data {name} in path {src} is not a file."
-            raise OSError(msg)
-        return src
+        return config_src if config_rootdir is None else (config_rootdir / config_src)
 
 
 class GeneratedData(Data):

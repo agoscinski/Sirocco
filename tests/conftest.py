@@ -58,26 +58,16 @@ def icon_filepath_executable() -> str:
 
 
 @pytest.fixture(scope="session")
-def available_datas(tmp_path_factory):
-    tmp_path = tmp_path_factory.mktemp("data")
-    available_datas = [
-        models.ConfigAvailableData(name="available", type=models.DataType.FILE, src=(tmp_path / "foo.txt"))
-    ]
-    # validation in core representation requires that available data exists
-    for available_data in available_datas:
-        available_data.src.touch()
-    return available_datas
-
-
-@pytest.fixture(scope="session")
-def minimal_config(available_datas) -> models.ConfigWorkflow:
+def minimal_config() -> models.ConfigWorkflow:
     return models.ConfigWorkflow(
         name="minimal",
         rootdir=pathlib.Path("minimal"),
         cycles=[models.ConfigCycle(name="minimal", tasks=[models.ConfigCycleTask(name="some_task")])],
         tasks=[models.ConfigShellTask(name="some_task", command="some_command")],
         data=models.ConfigData(
-            available=available_datas,
+            available=[
+                models.ConfigAvailableData(name="available", type=models.DataType.FILE, src=pathlib.Path("foo.txt"))
+            ],
             generated=[models.ConfigGeneratedData(name="bar", type=models.DataType.DIR, src=pathlib.Path("bar"))],
         ),
         parameters={},
@@ -85,7 +75,7 @@ def minimal_config(available_datas) -> models.ConfigWorkflow:
 
 
 @pytest.fixture(scope="session")
-def minimal_invert_task_io_config(available_datas) -> models.ConfigWorkflow:
+def minimal_invert_task_io_config() -> models.ConfigWorkflow:
     return models.ConfigWorkflow(
         name="minimal",
         rootdir=pathlib.Path("minimal"),
@@ -111,7 +101,9 @@ def minimal_invert_task_io_config(available_datas) -> models.ConfigWorkflow:
             models.ConfigShellTask(name="task_b", command="command_b"),
         ],
         data=models.ConfigData(
-            available=available_datas,
+            available=[
+                models.ConfigAvailableData(name="available", type=models.DataType.FILE, src=pathlib.Path("foo.txt"))
+            ],
             generated=[
                 models.ConfigGeneratedData(name="output_a", type=models.DataType.DIR, src=pathlib.Path("bar")),
                 models.ConfigGeneratedData(name="output_b", type=models.DataType.DIR, src=pathlib.Path("bar")),
