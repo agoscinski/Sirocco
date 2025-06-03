@@ -175,6 +175,8 @@ class ConfigCycleTaskOutput(_NamedBaseModel):
 
     port: str | None = None
 
+    port: str | None = None
+
 
 NAMED_BASE_T = typing.TypeVar("NAMED_BASE_T", bound=_NamedBaseModel)
 
