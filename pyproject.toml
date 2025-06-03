@@ -31,11 +31,12 @@ dependencies = [
   "pydantic",
   "ruamel.yaml",
   "aiida-core>=2.5",
-  "aiida-workgraph==0.4.10",
+  "aiida-workgraph==0.5.2",
   "termcolor",
   "pygraphviz",
   "lxml",
-  "f90nml"
+  "f90nml",
+  "aiida-shell>=0.8.1",
 ]
 license = {file = "LICENSE"}
 
@@ -46,10 +47,11 @@ Changelog = "https://github.com/C2SM/Sirocco/blob/main/CHANGELOG.md"
 
 [tool.pytest.ini_options]
 # Configuration for [pytest](https://docs.pytest.org)
-addopts = "--pdbcls=IPython.terminal.debugger:TerminalPdb"
+addopts = "-s --pdbcls=IPython.terminal.debugger:TerminalPdb"
 norecursedirs = "tests/cases"
 markers = [
-  "slow: slow integration tests which are not recommended to run locally for normal development"
+  "slow: slow integration tests which are not recommended to run locally for normal development",
+  "requires_icon: marks test to require icon installation"
 ]
 filterwarnings = [
   "error",
@@ -65,13 +67,21 @@ filterwarnings = [
 source = ["sirocco"]
 
 [tool.ruff]
-include = ["src/*py", "tests/*py"]
+include = ["src/*py", "tests/*py"]  # PRCOMMENT: Do we want to run Ruff via CI on our test files??
 target-version = "py310"
 
 [tool.ruff.lint]
 ignore = [
   "TID252", # prefer relative import over absolute
   "TRY003", # write custom error messages for formatting
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*py" = [
+    "SLF001",  # Private member accessed
+    "S101",    # Use of assert detected
+    "T201",    # `print` found
+    "PLR2004", # Magic value used in comparison
 ]
 
 ## Hatch configurations
@@ -93,7 +103,7 @@ extra-dependencies = [
     "ipdb"
 ]
 default-args = []
-extra-args = ["--doctest-modules", '-m not slow']
+extra-args = ["--doctest-modules", '-m not slow', '-m not requires_icon']
 
 [[tool.hatch.envs.hatch-test.matrix]]
 python = ["3.12"]
@@ -128,7 +138,8 @@ extra-dependencies = [
   "types-docutils",
   "types-colorama",
   "types-Pygments",
-  "types-termcolor"
+  "types-termcolor",
+  "types-requests"
 ]
 
 [tool.hatch.envs.types.scripts]
@@ -148,4 +159,8 @@ ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
 module = ["aiida_workgraph.sockets.builtins"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["termcolor._types"]
 ignore_missing_imports = true

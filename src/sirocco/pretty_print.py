@@ -97,6 +97,7 @@ class PrettyPrinter:
         ...                 stop_date=datetime(1000, 1, 2),
         ...                 chunk_start_date=datetime(1000, 1, 1),
         ...                 chunk_stop_date=datetime(1000, 1, 2),
+        ...                 period="P1D",
         ...             ),
         ...             coordinates={"date": datetime(1000, 1, 1).date()},
         ...         )
@@ -139,7 +140,7 @@ class PrettyPrinter:
             sections.append(
                 self.as_block(
                     "output",
-                    "\n".join(self.as_item(self.format_basic(output)) for output in obj.outputs),
+                    "\n".join(self.as_item(self.format_basic(output)) for output in obj.output_data_nodes()),
                 )
             )
         if obj.wait_on:

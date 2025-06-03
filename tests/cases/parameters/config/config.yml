@@ -1,6 +1,6 @@
 ---
-start_date: &root_start_date '2026-01-01T00:00'
-stop_date: &root_stop_date '2028-01-01T00:00'
+start_date: &root_start_date "2026-01-01T00:00"
+stop_date: &root_stop_date "2028-01-01T00:00"
 
 cycles:
   - bimonthly_tasks:
@@ -49,13 +49,17 @@ cycles:
             inputs:
               - analysis_foo_bar:
                   target_cycle:
-                    lag: ['P0M', 'P6M']
+                    lag: ["P0M", "P6M"]
                   port: None
             outputs: [yearly_analysis]
 
 tasks:
   - icon:
       plugin: shell
+      # PRCOMMENT
+      # Relative path -> except if this cannot be resolved to a registered code
+      # Probably either enforce absolute path, or provide a code argument
+      # See: https://github.com/C2SM/Sirocco/pull/153
       src: scripts/icon.py
       command: "icon.py --restart {PORT::restart} --init {PORT::init} --forcing {PORT::forcing}"
       parameters: [foo, bar]
