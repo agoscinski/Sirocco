@@ -1,11 +1,8 @@
 import logging
-import logging
 import pathlib
-import subprocess
 import subprocess
 
 import pytest
-import requests
 import requests
 
 from sirocco import pretty_print

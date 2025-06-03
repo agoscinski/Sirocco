@@ -6,10 +6,8 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 
 import aiida.common
 import aiida.orm
-import aiida_workgraph  # type: ignore[import-untyped] # does not have proper typing and stubs
-import aiida_workgraph.tasks.factory.shelljob_task  # type: ignore[import-untyped]  # is only for a workaround
-import aiida_workgraph  # type: ignore[import-untyped] # does not have proper typing and stubs
-import aiida_workgraph.tasks.factory.shelljob_task  # type: ignore[import-untyped]  # is only for a workaround
+import aiida_workgraph  # type: ignore[import-untyped] # does not have proper typing and stubs  # type: ignore[import-untyped] # does not have proper typing and stubs
+import aiida_workgraph.tasks.factory.shelljob_task  # type: ignore[import-untyped]  # is only for a workaround  # type: ignore[import-untyped]  # is only for a workaround
 from aiida.common.exceptions import NotExistent
 
 from sirocco import core
