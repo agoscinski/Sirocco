@@ -419,7 +419,7 @@ class AiidaWorkGraph:
 
             if task.computer and input_.computer and isinstance(input_, core.AvailableData):
                 # For RemoteData on the same computer, use just the filename
-                filename = Path(input_.src).name
+                filename = input_.src.name
                 filenames[input_.name] = filename
             else:
                 # For other cases (including GeneratedData), we need to handle parameterized data
@@ -438,7 +438,7 @@ class AiidaWorkGraph:
                     filename = input_label
                 else:
                     # Single data node with this name - can use simple filename
-                    filename = Path(input_.src).name if hasattr(input_, "src") else input_.name
+                    filename = input_.src.name if input_.src is not None else input_.name
 
                 # The key in filenames dict should be the input label (what's used in nodes dict)
                 filenames[input_label] = filename
