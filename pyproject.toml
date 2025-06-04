@@ -76,7 +76,6 @@ ignore = [
   "TRY003", # write custom error messages for formatting
 ]
 
-[tool.ruff.lint.per-file-ignores]
 ## Hatch configurations
 
 [tool.hatch.build.targets.sdist]
