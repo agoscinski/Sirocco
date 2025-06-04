@@ -76,6 +76,7 @@ ignore = [
 ]
 
 ## Hatch configurations
+[tool.ruff.lint.per-file-ignores]
 
 [tool.hatch.build.targets.sdist]
 include = [
