@@ -194,15 +194,10 @@ class AiidaWorkGraph:
                 msg = f"Could not find computer {data.computer!r} for input {data}."
                 raise ValueError(msg) from err
             # `remote_path` must be str not PosixPath to be JSON-serializable
-            # PRCOMMENT: Hack for now to make the tests pass
-            if computer.label == "localhost":
-                self._aiida_data_nodes[label] = aiida.orm.RemoteData(
-                    remote_path=str(data_full_path), label=label, computer=computer
-                )
-            else:
-                self._aiida_data_nodes[label] = aiida.orm.RemoteData(
-                    remote_path=str(data.src), label=label, computer=computer
-                )
+            # FIXME: should not use resolved relative path, will be fixed in PR #153
+            self._aiida_data_nodes[label] = aiida.orm.RemoteData(
+                remote_path=str(data_full_path), label=label, computer=computer
+            )
         elif data.type == "file":
             self._aiida_data_nodes[label] = aiida.orm.SinglefileData(label=label, file=data_full_path)
         elif data.type == "dir":
@@ -247,7 +242,7 @@ class AiidaWorkGraph:
         ]
         prepend_text = "\n".join([f"source {env_source_path}" for env_source_path in env_source_paths])
         metadata["options"] = {"prepend_text": prepend_text}
-        # NOTE: Hardcoded for now, possibly make user-facing option
+        # NOTE: Hardcoded for now, possibly make user-facing option (see issue #159)
         metadata["options"]["use_symlinks"] = True
 
         ## computer

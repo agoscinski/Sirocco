@@ -21,7 +21,7 @@ class DownloadError(RuntimeError):
 
 
 def download_file(url: str, file_path: pathlib.Path):
-    response = requests.get(url)  # noqa: S113 request-without-timeout
+    response = requests.get(url)
     if not response.ok:
         raise DownloadError(url, response)
 
@@ -48,7 +48,7 @@ def icon_grid_simple_path(pytestconfig):
 
 @pytest.fixture
 def icon_filepath_executable() -> str:
-    which_icon = subprocess.run(["which", "icon"], capture_output=True, check=False)  # noqa: S607
+    which_icon = subprocess.run(["which", "icon"], capture_output=True, check=False)
     if which_icon.returncode:
         msg = "Could not find icon executable."
         raise FileNotFoundError(msg)

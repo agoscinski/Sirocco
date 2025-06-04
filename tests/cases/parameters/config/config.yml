@@ -56,7 +56,7 @@ cycles:
 tasks:
   - icon:
       plugin: shell
-      # PRCOMMENT
+      # FIXME
       # Relative path -> except if this cannot be resolved to a registered code
       # Probably either enforce absolute path, or provide a code argument
       # See: https://github.com/C2SM/Sirocco/pull/153
