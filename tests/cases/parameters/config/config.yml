@@ -56,6 +56,10 @@ cycles:
 tasks:
   - icon:
       plugin: shell
+      # FIXME
+      # Relative path -> except if this cannot be resolved to a registered code
+      # Probably either enforce absolute path, or provide a code argument
+      # See: https://github.com/C2SM/Sirocco/pull/153
       src: scripts/icon.py
       command: "icon.py --restart {PORT::restart} --init {PORT::init} --forcing {PORT::forcing}"
       parameters: [foo, bar]

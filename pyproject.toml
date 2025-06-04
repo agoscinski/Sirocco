@@ -35,7 +35,8 @@ dependencies = [
   "termcolor",
   "pygraphviz",
   "lxml",
-  "f90nml"
+  "f90nml",
+  "aiida-shell>=0.8.1",
 ]
 license = {file = "LICENSE"}
 
