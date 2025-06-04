@@ -32,6 +32,7 @@ dependencies = [
   "ruamel.yaml",
   "aiida-core>=2.5",
   "aiida-workgraph==0.5.2",
+  "aiida-shell>=0.8.1",
   "termcolor",
   "pygraphviz",
   "lxml",
