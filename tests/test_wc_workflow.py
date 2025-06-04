@@ -23,8 +23,16 @@ def test_vizgraph(config_paths):
     VizGraph.from_config_file(config_paths["yml"]).draw(file_path=config_paths["svg"])
 
 
+@pytest.mark.requires_icon
+@pytest.mark.usefixtures("icon_filepath_executable", "icon_grid_simple_path")
+def test_icon():
+    # Test is performed by fixtures
+    pass
+
+
 # configs that are tested for running workgraph
 @pytest.mark.slow
+@pytest.mark.usefixtures("aiida_localhost")
 @pytest.mark.parametrize(
     "config_case",
     [
@@ -32,19 +40,19 @@ def test_vizgraph(config_paths):
         "parameters",
     ],
 )
-def test_run_workgraph(config_case, config_paths, aiida_computer):  # noqa: ARG001  # config_case is overridden
+def test_run_workgraph(config_case, config_paths):  # noqa: ARG001  # config_case is overridden
     """Tests end-to-end the parsing from file up to running the workgraph.
 
     Automatically uses the aiida_profile fixture to create a new profile. Note to debug the test with your profile
     please run this in a separate file as the profile is deleted after test finishes.
     """
-    # some configs reference computer "localhost" which we need to create beforehand
-    aiida_computer("localhost").store()
 
     core_workflow = Workflow.from_config_file(str(config_paths["yml"]))
     aiida_workflow = AiidaWorkGraph(core_workflow)
-    out = aiida_workflow.run()
-    assert out.get("execution_count", None).value == 1
+    output_node = aiida_workflow.run()
+    assert (
+        output_node.is_finished_ok
+    ), f"Not successful run. Got exit code {output_node.exit_code} with message {output_node.exit_message}."
 
 
 # configs containing task using icon plugin
@@ -58,7 +66,7 @@ def test_nml_mod(config_case, config_paths, tmp_path):  # noqa: ARG001  # config
     # Create core mamelists
     for task in wf.tasks:
         if isinstance(task, IconTask):
-            task.create_workflow_namelists(folder=tmp_path)
+            task.dump_namelists(directory=tmp_path)
     # Compare against reference
     for nml in nml_refdir.glob("*"):
         ref_nml = nml.read_text()
