@@ -28,10 +28,10 @@ def download_file(url: str, file_path: pathlib.Path):
     file_path.write_bytes(response.content)
 
 
-@pytest.fixture(scope="module")
-def icon_grid_simple_path(pytestconfig):
+@pytest.fixture(scope="session")
+def icon_grid_path(pytestconfig):
     url = "https://github.com/agoscinski/icon-testfiles/raw/refs/heads/main/icon_grid_0013_R02B04_R.nc"
-    filename = "icon_grid_simple.nc"
+    filename = "icon_grid_0013_R02B04_R.nc"
     cache_dir = pytestconfig.cache.mkdir("downloaded_files")
     icon_grid_path = cache_dir / filename
 
@@ -47,6 +47,7 @@ def icon_grid_simple_path(pytestconfig):
 
 
 @pytest.fixture
+@pytest.mark.requires_icon
 def icon_filepath_executable() -> str:
     which_icon = subprocess.run(["which", "icon"], capture_output=True, check=False)
     if which_icon.returncode:
@@ -64,7 +65,9 @@ def minimal_config() -> models.ConfigWorkflow:
         cycles=[models.ConfigCycle(name="minimal", tasks=[models.ConfigCycleTask(name="some_task")])],
         tasks=[models.ConfigShellTask(name="some_task", command="some_command")],
         data=models.ConfigData(
-            available=[models.ConfigAvailableData(name="foo", type=models.DataType.FILE, src=pathlib.Path("foo.txt"))],
+            available=[
+                models.ConfigAvailableData(name="available", type=models.DataType.FILE, src=pathlib.Path("foo.txt"))
+            ],
             generated=[models.ConfigGeneratedData(name="bar", type=models.DataType.DIR, src=pathlib.Path("bar"))],
         ),
         parameters={},
@@ -111,7 +114,7 @@ def minimal_invert_task_io_config() -> models.ConfigWorkflow:
 
 
 # configs that are tested for parsing
-ALL_CONFIG_CASES = ["small", "parameters", "large"]
+ALL_CONFIG_CASES = ["small-shell", "small-icon", "parameters", "large"]
 
 
 @pytest.fixture(params=ALL_CONFIG_CASES)
@@ -133,8 +136,15 @@ def generate_config_paths(test_case: str):
 
 
 @pytest.fixture
-def config_paths(config_case) -> dict[str, pathlib.Path]:
-    return generate_config_paths(config_case)
+def config_paths(config_case, icon_grid_path) -> dict[str, pathlib.Path]:
+    config = generate_config_paths(config_case)
+    if config_case == "small-icon":
+        config_rootdir = config["yml"].parent.absolute()
+        # We link the icon grid as specified in the model.namelist
+        config_icon_grid_path = pathlib.Path(config_rootdir / "./ICON/icon_grid_simple.nc")
+        if not config_icon_grid_path.exists():
+            config_icon_grid_path.symlink_to(icon_grid_path)
+    return config
 
 
 def pytest_addoption(parser):

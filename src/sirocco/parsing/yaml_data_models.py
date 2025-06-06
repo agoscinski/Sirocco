@@ -441,9 +441,13 @@ class ConfigNamelistFile(BaseModel, ConfigNamelistFileSpec):
 @dataclass(kw_only=True)
 class ConfigIconTaskSpecs:
     plugin: ClassVar[Literal["icon"]] = "icon"
+    # PRCOMMENT this is later resolved to an absolute path so we cannot use it for serialization
+    #           as the tests would fail. Since the main purpose of the repr is for regression tests
+    #           I disable its prnting here
+    src: Path = field(repr=False)
 
 
-class ConfigIconTask(ConfigBaseTask):
+class ConfigIconTask(ConfigBaseTask, ConfigIconTaskSpecs):
     """Class representing an ICON task configuration from a workflow file
 
     Examples:
@@ -460,6 +464,7 @@ class ConfigIconTask(ConfigBaseTask):
         ...           - path/to/case_nml:
         ...               block_1:
         ...                 param_name: param_value
+        ...         src: path/to/icon
         ...     '''
         ... )
         >>> icon_task_cfg = validate_yaml_content(ConfigIconTask, snippet)
@@ -487,7 +492,7 @@ class DataType(enum.StrEnum):
 @dataclass(kw_only=True)
 class ConfigBaseDataSpecs:
     type: DataType
-    src: Path
+    src: Path | None = None
     format: str | None = None
     computer: str | None = None
 
@@ -522,7 +527,7 @@ class ConfigBaseData(_NamedBaseModel, ConfigBaseDataSpecs):
 
 
 class ConfigAvailableData(ConfigBaseData):
-    pass
+    src: Path
 
 
 class ConfigGeneratedData(ConfigBaseData):
