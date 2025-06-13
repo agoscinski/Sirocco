@@ -24,3 +24,4 @@ job:
     - verdi computer setup --label santis-firecrest --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi computer configure firecrest santis-firecrest --url $FIRECREST_URL --token-uri https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $CLUSTER --temp-directory /tmp
     - verdi computer test santis-firecrest
+    - python ci/preparerun.py
