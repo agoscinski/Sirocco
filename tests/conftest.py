@@ -158,6 +158,7 @@ def config_paths(config_case, icon_grid_path, tmp_path, test_rootdir) -> dict[st
     # Expand /TESTS_ROOTDIR to directory where config is located
     for key in ["yml", "txt"]:
         config[key].write_text(config[key].read_text().replace("/TESTS_ROOTDIR", str(tmp_path)))
+        config[key].write_text(config[key].read_text().replace("/DATA_REMOTEDIR", str(tmp_path)))
 
     if config_case == "small-icon":
         config_rootdir = config["yml"].parent
