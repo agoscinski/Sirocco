@@ -21,7 +21,8 @@ job:
     - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     - pip install --upgrade pip
     - pip install . 
-    - firecrest whoami
+    - whoami
+    - firecrest --help
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label localhost_ssh --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi devel launch-add # hacky way to define localhost TODO do properly
