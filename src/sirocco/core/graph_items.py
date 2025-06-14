@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from itertools import chain, product
-from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar, cast
+from typing import TYPE_CHECKING, Any, ClassVar, Self, TypeVar, cast, Generic
 
 from sirocco.parsing.target_cycle import DateList, LagList, NoTargetCycle
 from sirocco.parsing.yaml_data_models import (
@@ -168,7 +168,7 @@ class Cycle(GraphItem):
     tasks: list[Task]
 
 
-class Array[GRAPH_ITEM_T]:
+class Array(Generic[GRAPH_ITEM_T]):
     """Dictionnary of GRAPH_ITEM_T objects accessed by arbitrary dimensions"""
 
     def __init__(self, name: str) -> None:
@@ -244,13 +244,13 @@ class Store[GRAPH_ITEM_T]:
     """Container for GRAPH_ITEM_T Arrays"""
 
     def __init__(self) -> None:
-        self._dict: dict[str, Array[GRAPH_ITEM_T]] = {}
+        self._dict: dict[str, Array(Generic[GRAPH_ITEM_T])] = {}
 
     def add(self, item: GRAPH_ITEM_T) -> None:
         graph_item = cast(GraphItem, item)  # mypy can somehow not deduce this
         name, coordinates = graph_item.name, graph_item.coordinates
         if name not in self._dict:
-            self._dict[name] = Array[GRAPH_ITEM_T](name)
+            self._dict[name] = Array(Generic[GRAPH_ITEM_T])(name)
         self._dict[name][coordinates] = item
 
     def __getitem__(self, key: tuple[str, dict]) -> GRAPH_ITEM_T:
