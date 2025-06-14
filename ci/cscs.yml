@@ -23,6 +23,6 @@ job:
     - pip install . 
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label santis-firecrest --hostname unused --transport firecrest --scheduler firecrest -n 
-    - verdi computer configure firecrest santis-firecrest --url $FIRECREST_URL --token-uri https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $CLUSTER --temp-directory /tmp/sirocco --api-version 1.16.0
+    - verdi computer configure firecrest santis-firecrest --url $FIRECREST_URL --token-uri https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $CLUSTER --temp-directory /tmp/sirocco --api-version 1.16.0 --small-file-size-mb 4096
     - verdi computer test santis-firecrest
     - python ci/preparerun.py
