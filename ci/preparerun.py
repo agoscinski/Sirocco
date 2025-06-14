@@ -16,7 +16,7 @@ yml_path.read_text().replace("/TESTS_ROOTDIR", str(workdir))
 yml_path.read_text().replace("/REMOTE_DATADIR", str(workdir))
 # TODO maybe need to copy remote datadir
 
-core_workflow = Workflow.from_config_file(workdir / "config.yml")
+core_workflow = Workflow.from_config_file(str(workdir / "config.yml"))
 aiida_workflow = AiidaWorkGraph(core_workflow)
 output_node = aiida_workflow.run()
 
