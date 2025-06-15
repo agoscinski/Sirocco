@@ -61,11 +61,11 @@ def icon_filepath_executable() -> str:
 
 
 @pytest.fixture
-def aiida_localhost_ssh(aiida_computer_ssh):
+def aiida_remote(aiida_computer_ssh):
     try:
-        computer = load_computer("localhost_ssh")
+        computer = load_computer("remote")
     except NotExistent:
-        computer = aiida_computer_ssh(label="localhost_ssh")
+        computer = aiida_computer_ssh(label="remote")
     return computer
 
 
