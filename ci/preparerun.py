@@ -48,7 +48,7 @@ REMOTE_TESTSDIR = "/capstor/scratch/cscs/ricoh/sirocco-tests/"
 yml_path.read_text().replace("/TESTS_ROOTDIR", REMOTE_TESTSDIR)
 yml_path.read_text().replace("/REMOTE_DATADIR", REMOTE_TESTSDIR)
 
-download_icon_grid(workdir / "config/ICON", "icon_grid_simple.nc")
+download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_simple.nc")
 
 
 computer = load_computer('remote')
