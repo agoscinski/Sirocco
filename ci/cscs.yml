@@ -18,7 +18,7 @@ job:
     - FIRECREST_URL=https://api.cscs.ch/cw/firecrest/v1
     - FIRECREST_SYSTEM=santis
     - FIRECREST_API_VERSION=1.16.0
-    - firecrest filesystems --system santis
+    - firecrest filesystems 
     - firecrest filesystems -s santis
     - firecrest filesystems --system $FIRECREST_SYSTEM
     #- mkdir /tmp/sirocco || true
