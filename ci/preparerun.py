@@ -1,5 +1,6 @@
 # DON
 
+import os
 import shutil
 from pathlib import Path
 from aiida import load_profile
@@ -54,6 +55,10 @@ download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_si
 
 
 computer = load_computer('remote')
+prepend_text = """
+# TODO matthieu
+"""
+computer.set_prepend_text(prepend_text)
 transport = computer.get_transport()
 with transport:
     transport.rmtree(REMOTE_TESTSDIR)
@@ -67,7 +72,8 @@ with transport:
     #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON/bin")
     #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/data")
     #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/scripts")
-    for dirpath, dirnames, filenames in workdir.walk():
+    for dirpath, dirnames, filenames in os.walk(workdir):
+        dirpath = Path(dirpath)
         relative_dirpath = dirpath.relative_to(workdir)
         print("relative_dirpath", relative_dirpath)
         transport.mkdir(Path(REMOTE_TESTSDIR) / relative_dirpath, ignore_existing=True)
