@@ -18,9 +18,9 @@ job:
     - FIRECREST_URL=https://api.cscs.ch/cw/firecrest/v1
     - FIRECREST_SYSTEM=santis
     - FIRECREST_API_VERSION=1.16.0
-    - firecrest rm /capstor/scratch/cscs/ricoh/sirocco-tests --force --system $FIRECREST_SYSTEM
+    - firecrest rm /capstor/scratch/cscs/ricoh/sirocco-tests --force --system $FIRECREST_SYSTEM || true
 
-    - firecrest mkdir /capstor/scratch/cscs/ricoh/sirocco-tests
+    - firecrest mkdir /capstor/scratch/cscs/ricoh/sirocco-tests --system $FIRECREST_SYSTEM
     - firecrest upload tests/cases/small-icon/config/config.yml /capstor/scratch/cscs/ricoh/sirocco-tests config.yml
     - firecrest filesystems 
     - firecrest filesystems -s santis
