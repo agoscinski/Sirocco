@@ -49,11 +49,11 @@ yml_path = workdir / "tests/cases/small-icon/config/config.yml"
 
 REMOTE_TESTSDIR = "/capstor/scratch/cscs/ricoh/sirocco-tests/"
 yml_path.read_text().replace("/TESTS_ROOTDIR", REMOTE_TESTSDIR)
-yml_path.read_text().replace("/REMOTE_DATADIR", REMOTE_TESTSDIR)
+yml_path.read_text().replace("/DATA_REMOTEDIR", REMOTE_TESTSDIR)
 
 # TODO @ ali why this file cannot be put?
 #download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_simple.nc")
-
+(workdir / "tests/cases/small-icon/config/ICON/icon_grid_simple.nc").touch()
 
 
 computer = load_computer('remote')
