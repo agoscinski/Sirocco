@@ -77,7 +77,7 @@ with transport:
         relative_dirpath = dirpath.relative_to(workdir)
         path_on_remote = Path(REMOTE_TESTSDIR) / relative_dirpath
         print("relative_dirpath", relative_dirpath)
-        print("create path")
+        print("create path", path_on_remote)
         transport.mkdir(path_on_remote, ignore_existing=True)
         for filename in filenames:
             source = dirpath / filename
