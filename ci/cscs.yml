@@ -16,7 +16,7 @@ job:
   extends: .f7t-controller
   script:
     - FIRECREST_URL=https://api.cscs.ch/cw/firecrest/v1
-    - CLUSTER=santis
+    - FIRECREST_SYSTEM=santis
     - mkdir /tmp/sirocco || true
     - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     - pip install --upgrade pip
@@ -28,9 +28,13 @@ job:
     - firecrest --help
     - firecrest --help
     - firecrest upload --help
-    - firecrest ls --system $CLUSTER /
-    - firecrest ls --system $CLUSTER /capstor
-    - firecrest ls --system $CLUSTER /capstor/scratch
+    - firecrest id
+    - firecrest filesystem
+    - firecrest get-partitions
+    - firecrest get-reservations
+    - firecrest ls /
+    - firecrest ls /capstor
+    - firecrest ls /capstor/scratch
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label localhost_ssh --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi devel launch-add # hacky way to define localhost TODO do properly
