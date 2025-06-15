@@ -112,7 +112,7 @@ with transport:
 #         type: file
 #         src: /DATA_REMOTEDIR/tests/cases/small-icon/config/ICON/dmin_wetgrowth_lookup.nc
 #
-core_workflow = Workflow.from_config_file(str(workdir / "config.yml"))
+core_workflow = Workflow.from_config_file(str(workdir / "tests/cases/small-icon/config/config.yml"))
 aiida_workflow = AiidaWorkGraph(core_workflow)
 output_node = aiida_workflow.run()
 
