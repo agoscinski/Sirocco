@@ -17,6 +17,7 @@ job:
   script:
     - FIRECREST_URL=https://api.cscs.ch/cw/firecrest/v1
     - FIRECREST_SYSTEM=santis
+    - firecrest filesystems --system santis
     - mkdir /tmp/sirocco || true
     - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     - pip install --upgrade pip
