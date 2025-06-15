@@ -316,6 +316,7 @@ class AiidaWorkGraph:
 
         # Set runtime information
         # FIXME: Set some defaults. Don't do this in the *Specs class, as we plan to inherit from `root`
+        # TODO: also support in shelltask
         metadata = {
             "options": {
                 "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime) if task.walltime else None,

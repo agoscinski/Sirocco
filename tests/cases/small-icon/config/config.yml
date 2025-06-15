@@ -42,7 +42,7 @@ cycles:
 tasks:
   - icon:
       plugin: icon
-      computer: localhost
+      computer: remote
       bin: /TESTS_ROOTDIR/tests/cases/small-icon/config/ICON/bin/icon
       namelists:
         - ./ICON/icon_master.namelist
@@ -54,7 +54,7 @@ tasks:
       cpus_per_task: 1
   - cleanup:
       plugin: shell
-      computer: localhost 
+      computer: remote 
       src: scripts/cleanup.py
       command: "python cleanup.py"
       # TODO
