@@ -58,12 +58,14 @@ transport = computer.get_transport()
 with transport:
     transport.rmtree(REMOTE_TESTSDIR)
     # mkdir all directory so we can use puttree, TODO might be bug in firecrest
+
+    #ignore_exsting does work as parents
     transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config"), ignore_existing=True)
     transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON"))
     transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/data"))
     transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/scripts"))
     
-    transport.puttree(localpath=workdir / "tests", remotepath=str(Path(REMOTE_TESTSDIR) / "tests"))
+    transport.puttree(localpath=workdir / "tests", remotepath=str(Path(REMOTE_TESTSDIR)))
     print(transport.listdir(REMOTE_TESTSDIR))
 #for 
 #    aiida_workflow.data
