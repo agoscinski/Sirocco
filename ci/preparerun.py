@@ -51,12 +51,18 @@ REMOTE_TESTSDIR = "/capstor/scratch/cscs/ricoh/sirocco-tests/"
 yml_path.read_text().replace("/TESTS_ROOTDIR", REMOTE_TESTSDIR)
 yml_path.read_text().replace("/REMOTE_DATADIR", REMOTE_TESTSDIR)
 
-download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_simple.nc")
+# TODO @ ali why this file cannot be put?
+#download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_simple.nc")
+
 
 
 computer = load_computer('remote')
-prepend_text = """
-# TODO matthieu
+prepend_text = f"""
+TODO matthieu what to set for santis?
+
+# TODO ali workaround because we cannot put gridfile
+wget https://github.com/agoscinski/icon-testfiles/raw/refs/heads/main/icon_grid_0013_R02B04_R.nc
+mv icon_grid_0013_R02B04_R.nc {Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON/icon_grid_simple.nc"}
 """
 computer.set_prepend_text(prepend_text)
 transport = computer.get_transport()
