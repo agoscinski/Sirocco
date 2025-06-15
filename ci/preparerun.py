@@ -35,8 +35,9 @@ def download_icon_grid(dest_dir: Path, filename: str):
 
     return icon_grid_path
 
-test_case = Path("../tests/cases/small-icon/config").absolute()
-workdir = Path("../workdir").absolute()
+# must be run from repo rootdir
+test_case = Path("tests/cases/small-icon/config").absolute()
+workdir = Path("workdir").absolute()
 if workdir.exists():
     workdir.rmdir()
 (workdir / "tests/cases/small-icon/").mkdir(parents=True)
