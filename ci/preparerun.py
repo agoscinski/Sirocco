@@ -75,14 +75,15 @@ with transport:
     for dirpath, dirnames, filenames in os.walk(workdir):
         dirpath = Path(dirpath)
         relative_dirpath = dirpath.relative_to(workdir)
+        path_on_remote = Path(REMOTE_TESTSDIR) / relative_dirpath
         print("relative_dirpath", relative_dirpath)
-        transport.mkdir(Path(REMOTE_TESTSDIR) / relative_dirpath, ignore_existing=True)
+        print("create path")
+        transport.mkdir(path_on_remote, ignore_existing=True)
         for filename in filenames:
-            transport.putfile(
-                    dirpath / filename,
-                    Path(REMOTE_TESTSDIR) / relative_dirpath / filename,
-            )
-            print("filename", dirpath / filename)
+            source = dirpath / filename
+            dest = Path(REMOTE_TESTSDIR) / relative_dirpath / filename
+            print("put file from", source, "to", dest)
+            transport.putfile(source, dest)
 
     print(transport.listdir(REMOTE_TESTSDIR))
 #for 
