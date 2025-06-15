@@ -53,6 +53,7 @@ download_icon_grid(workdir / "config/ICON", "icon_grid_simple.nc")
 computer = load_computer('remote')
 transport = computer.get_transport()
 with transport:
+    transport.rmtree(REMOTE_TESTSDIR)
     transport.mkdir(REMOTE_TESTSDIR)
     transport.puttree(localpath=workdir, remotepath=REMOTE_TESTSDIR)
     print(transport.listdir(REMOTE_TESTSDIR))
