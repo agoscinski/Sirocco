@@ -48,8 +48,10 @@ shutil.copytree(test_case, workdir / "tests/cases/small-icon/config")
 yml_path = workdir / "tests/cases/small-icon/config/config.yml"
 
 REMOTE_TESTSDIR = "/capstor/scratch/cscs/ricoh/sirocco-tests/"
-yml_path.read_text().replace("/TESTS_ROOTDIR", REMOTE_TESTSDIR)
-yml_path.read_text().replace("/DATA_REMOTEDIR", REMOTE_TESTSDIR)
+text = yml_path.read_text()
+text.replace("/TESTS_ROOTDIR", REMOTE_TESTSDIR)
+text.replace("/DATA_REMOTEDIR", REMOTE_TESTSDIR)
+yml_path.write_text(text)
 
 # TODO @ ali why this file cannot be put?
 #download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_simple.nc")

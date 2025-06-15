@@ -47,5 +47,5 @@ job:
     - verdi computer setup --label remote --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi devel launch-add # hacky way to define localhost TODO do properly
     - verdi computer configure firecrest remote --url $FIRECREST_URL --token-uri https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $FIRECREST_SYSTEM --temp-directory /capstor/scratch/cscs/ricoh/sirocco-tmp --api-version 1.16.0 --small-file-size-mb 4096
-    - verdi computer test remote # TODO does not fail
+    - verdi computer test -print-traceback remote # TODO does not fail
     - python ci/preparerun.py
