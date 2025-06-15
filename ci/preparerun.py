@@ -49,7 +49,6 @@ yml_path = workdir / "tests/cases/small-icon/config/config.yml"
 
 REMOTE_TESTSDIR = "/capstor/scratch/cscs/ricoh/sirocco-tests/"
 yml_path.write_text(yml_path.read_text().replace("/TESTS_ROOTDIR/", REMOTE_TESTSDIR).replace("/DATA_REMOTEDIR/", REMOTE_TESTSDIR))
-print("yml", yml_path, "content:\n", text
 print("yml", yml_path, "content:\n", yml_path.read_text())
 
 # TODO @ ali why this file cannot be put?
