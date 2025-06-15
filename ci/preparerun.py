@@ -2,7 +2,9 @@
 
 import shutil
 from pathlib import Path
+from aiida import load_profile
 from aiida.orm import load_computer
+load_profile()
 
 from sirocco.core import Workflow
 from sirocco.workgraph import AiidaWorkGraph
