@@ -254,8 +254,11 @@ class ConfigBaseTaskSpecs:
     host: str | None = None
     account: str | None = None
     uenv: dict | None = None
-    nodes: int | None = None
+    nodes: int | None = None  # SLURM option `--nodes`, AiiDA option `num_machines`
     walltime: str | None = None
+    ntasks_per_node: int | None = None  # SLURM option `--ntasks-per-node`, AiiDA option `num_mpiprocs_per_machine`
+    mem: int | None = None  # SLURM option `--mem` in MB, AiiDA option `max_memory_kb` in KB
+    cpus_per_task: int | None = None  # SLURM option `--cpus_per_task`, AiiDA option `num_cores_per_mpiproc`
 
 
 class ConfigBaseTask(_NamedBaseModel, ConfigBaseTaskSpecs):
@@ -267,9 +270,19 @@ class ConfigBaseTask(_NamedBaseModel, ConfigBaseTaskSpecs):
 
     @field_validator("walltime")
     @classmethod
-    def convert_to_struct_time(cls, value: str | None) -> time.struct_time | None:
-        """Converts a string of form "%H:%M:%S" to a time.time_struct"""
-        return None if value is None else time.strptime(value, "%H:%M:%S")
+    def validate_walltime_format(cls, value: str | None) -> str | None:
+        """Validates that walltime string adheres to "%H:%M:%S" format"""
+        if value is None:
+            return None
+
+        try:
+            # This will raise ValueError if format is invalid
+            time.strptime(value, "%H:%M:%S")
+            # Return the original string, not the parsed time object
+            return value  # noqa: TRY300
+        except ValueError as e:
+            msg = f"walltime must be in HH:MM:SS format, got '{value}'"
+            raise ValueError(msg) from e
 
 
 class ConfigRootTask(ConfigBaseTask):
@@ -364,7 +377,7 @@ class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
         >>> my_task.env_source_files
         ['env.sh']
         >>> my_task.walltime.tm_min
-        1
+        '00:01:00'
     """
 
     # We need to loosen up the extra='forbid' flag because of the plugin class var
