@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, TypeAlias
 import aiida.common
 import aiida.orm
 import aiida.transports
+from aiida.transports.plugins.local import LocalTransport  # I don't understand why this might be needed
 import aiida_workgraph  # type: ignore[import-untyped] # does not have proper typing and stubs
 import aiida_workgraph.tasks.factory.shelljob_task  # type: ignore[import-untyped]  # is only for a workaround
 from aiida.common.exceptions import NotExistent
@@ -203,7 +204,7 @@ class AiidaWorkGraph:
                 msg = f"Could not find available data {data.name} in path {data.src} on computer {data.computer}."
                 raise FileNotFoundError(msg)
 
-        if computer.get_transport_class() is aiida.transports.plugins.local.LocalTransport:
+        if computer.get_transport_class() is LocalTransport:
             if data.src.is_file():
                 self._aiida_data_nodes[label] = aiida.orm.SinglefileData(file=str(data.src), label=label)
             else:
