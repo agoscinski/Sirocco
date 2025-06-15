@@ -48,10 +48,8 @@ shutil.copytree(test_case, workdir / "tests/cases/small-icon/config")
 yml_path = workdir / "tests/cases/small-icon/config/config.yml"
 
 REMOTE_TESTSDIR = "/capstor/scratch/cscs/ricoh/sirocco-tests/"
-text = yml_path.read_text()
-text.replace("/TESTS_ROOTDIR/", REMOTE_TESTSDIR)
-text.replace("/DATA_REMOTEDIR/", REMOTE_TESTSDIR)
-yml_path.write_text(text)
+yml_path.write_text(yml_path.read_text().replace("/TESTS_ROOTDIR/", REMOTE_TESTSDIR).replace("/DATA_REMOTEDIR/", REMOTE_TESTSDIR))
+print("yml", yml_path, "content:\n", text
 print("yml", yml_path, "content:\n", yml_path.read_text())
 
 # TODO @ ali why this file cannot be put?
@@ -96,6 +94,6 @@ with transport:
 
     print(transport.listdir(REMOTE_TESTSDIR))
 
-core_workflow = Workflow.from_config_file(str(workdir / "tests/cases/small-icon/config/config.yml"))
+core_workflow = Workflow.from_config_file(str(yml_path))
 aiida_workflow = AiidaWorkGraph(core_workflow)
 output_node = aiida_workflow.run()
