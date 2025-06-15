@@ -96,3 +96,14 @@ with transport:
 core_workflow = Workflow.from_config_file(str(yml_path))
 aiida_workflow = AiidaWorkGraph(core_workflow)
 output_node = aiida_workflow.run()
+
+print("output_node.is_finished_ok", output_node.is_finished_ok)
+if not output_node.is_finished_ok:
+    print(f"Not successful run. Got exit code {output_node.exit_code} with message {output_node.exit_message}.")
+    from aiida.cmdline.utils.common import get_workchain_report, get_calcjob_report
+    # overall report but often not enough to really find the bug, one has to go to calcjob
+    print(get_workchain_report(output_node, levelname='REPORT'))
+    # the calcjobs are typically stored in 'called_descendants'
+    for node in output_node.called_descendants:
+        print(f"{node.process_label} workdir:", node.get_remote_workdir())
+        print(f"{node.process_label} report:\n", get_calcjob_report(node))
