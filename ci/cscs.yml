@@ -23,9 +23,14 @@ job:
     - pip install . 
     - whoami
     - echo $SCRATCH
+    - echo $PWD
+    - echo $HOME
+    - firecrest --help
     - firecrest --help
     - firecrest upload --help
-    - firecrest ls -s santis /capstor/scratch/cscs/agoscins
+    - firecrest ls --system $CLUSTER /
+    - firecrest ls --system $CLUSTER /capstor
+    - firecrest ls --system $CLUSTER /capstor/scratch
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label localhost_ssh --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi devel launch-add # hacky way to define localhost TODO do properly
