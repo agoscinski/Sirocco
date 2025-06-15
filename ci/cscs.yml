@@ -24,9 +24,8 @@ job:
     - whoami
     - echo $SCRATCH
     - firecrest --help
-    - firecrest systems
-    - firecrest ls -s santis /capstor/scratch/cscs/agoscins
     - firecrest upload --help
+    - firecrest ls -s santis /capstor/scratch/cscs/agoscins
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label localhost_ssh --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi devel launch-add # hacky way to define localhost TODO do properly
