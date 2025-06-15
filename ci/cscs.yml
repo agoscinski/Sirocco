@@ -24,7 +24,8 @@ job:
     - whoami
     - echo $SCRATCH
     - firecrest --help
-    - firecrest ls /capstor/scratch/cscs/agoscins
+    - firecrest systems
+    - firecrest ls -s santis /capstor/scratch/cscs/agoscins
     - firecrest upload --help
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label localhost_ssh --hostname unused --transport firecrest --scheduler firecrest -n 
