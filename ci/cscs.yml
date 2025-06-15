@@ -19,7 +19,6 @@ job:
     - FIRECREST_SYSTEM=santis
     - FIRECREST_API_VERSION=1.16.0
     - firecrest filesystems --system santis
-    - firecrest filesystems --s santis
     - firecrest filesystems --system $FIRECREST_SYSTEM
     #- mkdir /tmp/sirocco || true
     #- apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
@@ -33,12 +32,12 @@ job:
     #- firecrest --help
     #- firecrest upload --help
     - firecrest id --system $FIRECREST_SYSTEM
-    - firecrest filesystem -s $FIRECREST_SYSTEM
-    - firecrest get-partitions -s $FIRECREST_SYSTEM
-    - firecrest get-reservations -s $FIRECREST_SYSTEM
-    - firecrest ls -s $FIRECREST_SYSTEM /
-    - firecrest ls -s $FIRECREST_SYSTEM /capstor
-    - firecrest ls -s $FIRECREST_SYSTEM /capstor/scratch
+    - firecrest filesystem --system $FIRECREST_SYSTEM
+    - firecrest get-partitions --system $FIRECREST_SYSTEM
+    - firecrest get-reservations --system $FIRECREST_SYSTEM
+    - firecrest ls --system $FIRECREST_SYSTEM /
+    - firecrest ls --system $FIRECREST_SYSTEM /capstor
+    - firecrest ls --system $FIRECREST_SYSTEM /capstor/scratch
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label localhost_ssh --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi devel launch-add # hacky way to define localhost TODO do properly
