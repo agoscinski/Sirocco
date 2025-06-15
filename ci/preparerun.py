@@ -58,7 +58,7 @@ transport = computer.get_transport()
 with transport:
     transport.rmtree(REMOTE_TESTSDIR)
     transport.mkdir(REMOTE_TESTSDIR)
-    transport.puttree(localpath=workdir, remotepath=REMOTE_TESTSDIR)
+    transport.puttree(localpath=workdir / "tests", remotepath=str(Path(REMOTE_TESTSDIR) / "tests"))
     print(transport.listdir(REMOTE_TESTSDIR))
 #for 
 #    aiida_workflow.data
