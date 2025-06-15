@@ -19,6 +19,7 @@ job:
     - FIRECREST_SYSTEM=santis
     - FIRECREST_API_VERSION=1.16.0
     - firecrest filesystems --system santis
+    - firecrest filesystems -system santis
     - firecrest filesystems --system $FIRECREST_SYSTEM
     #- mkdir /tmp/sirocco || true
     #- apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
