@@ -19,18 +19,20 @@ job:
     - FIRECREST_SYSTEM=santis
     - FIRECREST_API_VERSION=1.16.0
     - firecrest filesystems --system santis
-    - mkdir /tmp/sirocco || true
-    - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
-    - pip install --upgrade pip
-    - pip install . 
-    - whoami
-    - echo $SCRATCH
-    - echo $PWD
-    - echo $HOME
-    - firecrest --help
-    - firecrest --help
-    - firecrest upload --help
-    - firecrest id -s $FIRECREST_SYSTEM
+    - firecrest filesystems --s santis
+    - firecrest filesystems --system $FIRECREST_SYSTEM
+    #- mkdir /tmp/sirocco || true
+    #- apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
+    #- pip install --upgrade pip
+    #- pip install . 
+    #- whoami
+    #- echo $SCRATCH
+    #- echo $PWD
+    #- echo $HOME
+    #- firecrest --help
+    #- firecrest --help
+    #- firecrest upload --help
+    - firecrest id --system $FIRECREST_SYSTEM
     - firecrest filesystem -s $FIRECREST_SYSTEM
     - firecrest get-partitions -s $FIRECREST_SYSTEM
     - firecrest get-reservations -s $FIRECREST_SYSTEM
