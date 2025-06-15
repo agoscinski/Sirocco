@@ -52,8 +52,8 @@ yml_path.write_text(yml_path.read_text().replace("/TESTS_ROOTDIR/", REMOTE_TESTS
 print("yml", yml_path, "content:\n", yml_path.read_text())
 
 # TODO @ ali why this file cannot be put?
-download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_simple.nc")
-#(workdir / "tests/cases/small-icon/config/ICON/icon_grid_simple.nc").touch()
+#download_icon_grid(workdir / "tests/cases/small-icon/config/ICON", "icon_grid_simple.nc")
+(workdir / "tests/cases/small-icon/config/ICON/icon_grid_simple.nc").touch()
 
 
 computer = load_computer('remote')
