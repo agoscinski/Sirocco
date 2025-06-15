@@ -28,10 +28,10 @@ job:
     - firecrest --help
     - firecrest --help
     - firecrest upload --help
-    - firecrest id
-    - firecrest filesystem
-    - firecrest get-partitions
-    - firecrest get-reservations
+    - firecrest -s $FIRECREST_SYSTEM id
+    - firecrest -s $FIRECREST_SYSTEM filesystem
+    - firecrest -s $FIRECREST_SYSTEM get-partitions
+    - firecrest -s $FIRECREST_SYSTEM get-reservations
     - firecrest ls /
     - firecrest ls /capstor
     - firecrest ls /capstor/scratch
