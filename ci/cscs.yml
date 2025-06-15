@@ -29,7 +29,7 @@ job:
     #- firecrest filesystems 
     #- firecrest filesystems -s santis
     #- firecrest filesystems --system $FIRECREST_SYSTEM
-    - mkdir /tmp/sirocco || true
+    - firecrest mkdir /capstor/scratch/cscs/ricoh/sirocco-tmp --system $FIRECREST_SYSTEM || true # ignore if exists TODO i think ifrecrest has an option
     - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     - pip install --upgrade pip
     - pip install . 
@@ -46,6 +46,6 @@ job:
     - verdi presto --profile-name "cscs-ci"
     - verdi computer setup --label remote --hostname unused --transport firecrest --scheduler firecrest -n 
     - verdi devel launch-add # hacky way to define localhost TODO do properly
-    - verdi computer configure firecrest remote --url $FIRECREST_URL --token-uri https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $FIRECREST_SYSTEM --temp-directory /tmp/sirocco --api-version 1.16.0 --small-file-size-mb 4096 # TODO rename remote in config file to remote and pytest provdie a way to pass the remote
+    - verdi computer configure firecrest remote --url $FIRECREST_URL --token-uri https://auth.cscs.ch/auth/realms/firecrest-clients/protocol/openid-connect/token --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $FIRECREST_SYSTEM --temp-directory /capstor/scratch/cscs/ricoh/sirocco-tmp --api-version 1.16.0 --small-file-size-mb 4096
     - verdi computer test remote 
     - python ci/preparerun.py
