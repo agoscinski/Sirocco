@@ -58,14 +58,26 @@ transport = computer.get_transport()
 with transport:
     transport.rmtree(REMOTE_TESTSDIR)
     # mkdir all directory so we can use puttree, TODO might be bug in firecrest
+    # puttree is buggy so we do manually
+    #transport.puttree(localpath=workdir / "tests", remotepath=str(Path(REMOTE_TESTSDIR)))
 
     #ignore_exsting does work as parents
-    transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config"), ignore_existing=True)
-    transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON"))
-    transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/data"))
-    transport.mkdir(str(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/scripts"))
-    
-    transport.puttree(localpath=workdir / "tests", remotepath=str(Path(REMOTE_TESTSDIR)))
+    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config", ignore_existing=True)
+    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON")
+    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON/bin")
+    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/data")
+    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/scripts")
+    for dirpath, dirnames, filenames in workdir.walk():
+        relative_dirpath = dirpath.relative_to(workdir)
+        print("relative_dirpath", relative_dirpath)
+        transport.mkdir(Path(REMOTE_TESTSDIR) / relative_dirpath, ignore_existing=True)
+        for filename in filenames:
+            transport.putfile(
+                    dirpath / filename,
+                    Path(REMOTE_TESTSDIR) / relative_dirpath / filename,
+            )
+            print("filename", dirpath / filename)
+
     print(transport.listdir(REMOTE_TESTSDIR))
 #for 
 #    aiida_workflow.data
