@@ -28,7 +28,6 @@ job:
     - firecrest --help
     - firecrest --help
     - firecrest upload --help
-    - fircrest id --help
     - firecrest id -s $FIRECREST_SYSTEM
     - firecrest filesystem -s $FIRECREST_SYSTEM
     - firecrest get-partitions -s $FIRECREST_SYSTEM
