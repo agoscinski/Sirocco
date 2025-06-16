@@ -47,18 +47,18 @@ class Data(ConfigBaseDataSpecs, GraphItem):
     @classmethod
     def from_config(cls, config: ConfigBaseData, coordinates: dict) -> AvailableData | GeneratedData:
         data_class = AvailableData if isinstance(config, ConfigAvailableData) else GeneratedData
-        return data_class(
-            name=config.name,
-            type=config.type,
-            src=config.src,
-            coordinates=coordinates,
-        )
+        config_kwargs = dict(config)
+        del config_kwargs["parameters"]
+        return data_class(coordinates=coordinates, **config_kwargs)
 
 
+@dataclass(kw_only=True)
 class AvailableData(Data):
-    pass
+    src: Path
+    computer: str
 
 
+@dataclass(kw_only=True)
 class GeneratedData(Data):
     pass
 
@@ -91,8 +91,14 @@ class Task(ConfigBaseTaskSpecs, GraphItem):
     def input_data_nodes(self) -> Iterator[Data]:
         yield from chain(*self.inputs.values())
 
+    def input_data_items(self) -> Iterator[tuple[str, Data]]:
+        yield from ((key, value) for key, values in self.inputs.items() for value in values)
+
     def output_data_nodes(self) -> Iterator[Data]:
         yield from chain(*self.outputs.values())
+
+    def output_data_items(self) -> Iterator[tuple[str | None, Data]]:
+        yield from ((key, value) for key, values in self.outputs.items() for value in values)
 
     @classmethod
     def from_config(
@@ -137,10 +143,10 @@ class Task(ConfigBaseTaskSpecs, GraphItem):
         return new
 
     @classmethod
-    def build_from_config(cls: type[Self], config: ConfigTask, **kwargs: Any) -> Self:
+    def build_from_config(cls: type[Self], config: ConfigTask, config_rootdir: Path, **kwargs: Any) -> Self:
         config_kwargs = dict(config)
         del config_kwargs["parameters"]
-        return cls(**kwargs, **config_kwargs)
+        return cls(config_rootdir=config_rootdir, **kwargs, **config_kwargs)
 
     def link_wait_on_tasks(self, taskstore: Store[Task]) -> None:
         self.wait_on = list(

@@ -22,7 +22,6 @@ class IconTask(models.ConfigIconTaskSpecs, Task):
 
     def __post_init__(self):
         super().__post_init__()
-
         # detect master namelist
         master_namelist = None
         for namelist in self.namelists:
@@ -64,7 +63,8 @@ class IconTask(models.ConfigIconTaskSpecs, Task):
     @property
     def is_restart(self) -> bool:
         """Check if the icon task starts from the restart file."""
-        return self._AIIDA_ICON_RESTART_FILE_PORT_NAME in self.inputs
+        # restart port must be present and nonempty
+        return bool(self.inputs.get(self._AIIDA_ICON_RESTART_FILE_PORT_NAME, False))
 
     def update_icon_namelists_from_workflow(self):
         if not isinstance(self.cycle_point, DateCyclePoint):
@@ -95,7 +95,7 @@ class IconTask(models.ConfigIconTaskSpecs, Task):
             namelist.dump(directory / filename)
 
     @classmethod
-    def build_from_config(cls: type[Self], config: models.ConfigTask, **kwargs: Any) -> Self:
+    def build_from_config(cls: type[Self], config: models.ConfigTask, config_rootdir: Path, **kwargs: Any) -> Self:
         config_kwargs = dict(config)
         del config_kwargs["parameters"]
         # The following check is here for type checkers.
@@ -105,11 +105,12 @@ class IconTask(models.ConfigIconTaskSpecs, Task):
             raise TypeError
 
         config_kwargs["namelists"] = [
-            NamelistFile.from_config(config=config_namelist, config_rootdir=kwargs["config_rootdir"])
+            NamelistFile.from_config(config=config_namelist, config_rootdir=config_rootdir)
             for config_namelist in config_kwargs["namelists"]
         ]
 
         self = cls(
+            config_rootdir=config_rootdir,
             **kwargs,
             **config_kwargs,
         )

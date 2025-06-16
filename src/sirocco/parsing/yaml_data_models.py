@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 import itertools
 import re
 import time
@@ -250,7 +249,7 @@ class ConfigBaseTaskSpecs:
     Any of these keys can be None, in which case they are inherited from the root task.
     """
 
-    computer: str | None = None
+    computer: str
     host: str | None = None
     account: str | None = None
     uenv: dict | None = None
@@ -281,7 +280,9 @@ class ConfigShellTaskSpecs:
     plugin: ClassVar[Literal["shell"]] = "shell"
     port_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"{PORT(\[sep=.+\])?::(.+?)}"), repr=False)
     sep_pattern: ClassVar[re.Pattern] = field(default=re.compile(r"\[sep=(.+)\]"), repr=False)
-    src: Path | None = None
+    src: Path | None = field(
+        default=None, metadata={"description": ("Script file relative to the config directory.")}, repr=False
+    )
     command: str
     env_source_files: list[str] = field(default_factory=list)
 
@@ -351,6 +352,7 @@ class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
         ...         '''
         ...     my_task:
         ...       plugin: shell
+        ...       computer: localhost
         ...       command: "my_script.sh -n 1024 {PORT::current_sim_output}"
         ...       src: post_run_scripts/my_script.sh
         ...       env_source_files: "env.sh"
@@ -370,6 +372,14 @@ class ConfigShellTask(ConfigBaseTask, ConfigShellTaskSpecs):
     @classmethod
     def validate_env_source_files(cls, value: str | list[str]) -> list[str]:
         return [value] if isinstance(value, str) else value
+
+    @field_validator("src")
+    @classmethod
+    def validate_is_relative(cls, value: Path | None) -> Path | None:
+        if value is not None and value.is_absolute():
+            msg = "The field 'src' must be relative path."
+            raise ValueError(msg)
+        return value
 
 
 @dataclass(kw_only=True)
@@ -432,9 +442,18 @@ class ConfigNamelistFile(BaseModel, ConfigNamelistFileSpec):
 @dataclass(kw_only=True)
 class ConfigIconTaskSpecs:
     plugin: ClassVar[Literal["icon"]] = "icon"
+    bin: Path = field(repr=False)
+
+    @field_validator("bin")
+    @classmethod
+    def validate_is_absolute(cls, value: Path) -> Path:
+        if not value.is_absolute():
+            msg = "The field 'bin' must be absolute path."
+            raise ValueError(msg)
+        return value
 
 
-class ConfigIconTask(ConfigBaseTask):
+class ConfigIconTask(ConfigBaseTask, ConfigIconTaskSpecs):
     """Class representing an ICON task configuration from a workflow file
 
     Examples:
@@ -446,11 +465,13 @@ class ConfigIconTask(ConfigBaseTask):
         ...     '''
         ...       ICON:
         ...         plugin: icon
+        ...         computer: localhost
         ...         namelists:
         ...           - path/to/icon_master.namelist
         ...           - path/to/case_nml:
         ...               block_1:
         ...                 param_name: param_value
+        ...         bin: /path/to/icon
         ...     '''
         ... )
         >>> icon_task_cfg = validate_yaml_content(ConfigIconTask, snippet)
@@ -470,17 +491,10 @@ class ConfigIconTask(ConfigBaseTask):
         return nmls
 
 
-class DataType(enum.StrEnum):
-    FILE = enum.auto()
-    DIR = enum.auto()
-
-
 @dataclass(kw_only=True)
 class ConfigBaseDataSpecs:
-    type: DataType
-    src: Path
+    src: Path | None = None
     format: str | None = None
-    computer: str | None = None
 
 
 class ConfigBaseData(_NamedBaseModel, ConfigBaseDataSpecs):
@@ -495,35 +509,36 @@ class ConfigBaseData(_NamedBaseModel, ConfigBaseDataSpecs):
             >>> snippet = textwrap.dedent(
             ...     '''
             ...       foo:
-            ...         type: "file"
             ...         src: "foo.txt"
             ...     '''
             ... )
             >>> validate_yaml_content(ConfigBaseData, snippet)
-            ConfigBaseData(type=<DataType.FILE: 'file'>, src=PosixPath('foo.txt'), format=None, computer=None, name='foo', parameters=[])
+            ConfigBaseData(src=PosixPath('foo.txt'), format=None, name='foo', parameters=[])
 
 
         from python:
 
-            >>> ConfigBaseData(name="foo", type=DataType.FILE, src="foo.txt")
-            ConfigBaseData(type=<DataType.FILE: 'file'>, src=PosixPath('foo.txt'), format=None, computer=None, name='foo', parameters=[])
+            >>> ConfigBaseData(name="foo", src="foo.txt")
+            ConfigBaseData(src=PosixPath('foo.txt'), format=None, name='foo', parameters=[])
     """
 
     parameters: list[str] = []
 
 
 class ConfigAvailableData(ConfigBaseData):
-    pass
+    src: Path
+    computer: str
 
-
-class ConfigGeneratedData(ConfigBaseData):
-    @field_validator("computer")
+    @field_validator("src")
     @classmethod
-    def invalid_field(cls, value: str | None) -> str | None:
-        if value is not None:
-            msg = "The field 'computer' can only be specified for available data."
+    def validate_is_absolute(cls, value: Path) -> Path:
+        if not value.is_absolute():
+            msg = "The field 'src' must be absolute path."
             raise ValueError(msg)
         return value
+
+
+class ConfigGeneratedData(ConfigBaseData): ...
 
 
 class ConfigData(BaseModel):
@@ -539,11 +554,10 @@ class ConfigData(BaseModel):
             ...     '''
             ...     available:
             ...       - foo:
-            ...           type: "file"
-            ...           src: "foo.txt"
+            ...           computer: "localhost"
+            ...           src: "/foo.txt"
             ...     generated:
             ...       - bar:
-            ...           type: "file"
             ...           src: "bar.txt"
             ...     '''
             ... )
@@ -618,15 +632,15 @@ class ConfigWorkflow(BaseModel):
             ...     tasks:
             ...       - task_a:
             ...           plugin: shell
+            ...           computer: localhost
             ...           command: "some_command"
             ...     data:
             ...       available:
             ...         - foo:
-            ...             type: file
-            ...             src: foo.txt
+            ...             computer: localhost
+            ...             src: /foo.txt
             ...       generated:
             ...         - bar:
-            ...             type: dir
             ...             src: bar
             ...     '''
             ... )
@@ -639,15 +653,23 @@ class ConfigWorkflow(BaseModel):
             ...     rootdir=Path("/location/of/config/file"),
             ...     cycles=[ConfigCycle(minimal_cycle={"tasks": [ConfigCycleTask(task_a={})]})],
             ...     tasks=[
-            ...         ConfigShellTask(task_a={"plugin": "shell", "command": "some_command"})
+            ...         ConfigShellTask(
+            ...             task_a={
+            ...                 "plugin": "shell",
+            ...                 "computer": "localhost",
+            ...                 "command": "some_command",
+            ...             }
+            ...         )
             ...     ],
             ...     data=ConfigData(
             ...         available=[
-            ...             ConfigAvailableData(name="foo", type=DataType.FILE, src="foo.txt")
+            ...             ConfigAvailableData(
+            ...                 name="foo",
+            ...                 computer="localhost",
+            ...                 src="/foo.txt",
+            ...             )
             ...         ],
-            ...         generated=[
-            ...             ConfigGeneratedData(name="bar", type=DataType.DIR, src="bar")
-            ...         ],
+            ...         generated=[ConfigGeneratedData(name="bar", src="bar")],
             ...     ),
             ...     parameters={},
             ... )

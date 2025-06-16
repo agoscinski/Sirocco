@@ -1,9 +1,12 @@
 import logging
 import pathlib
+import shutil
 import subprocess
 
 import pytest
 import requests
+from aiida.common import NotExistent
+from aiida.orm import load_computer
 
 from sirocco import pretty_print
 from sirocco.core import _tasks as core_tasks
@@ -28,10 +31,10 @@ def download_file(url: str, file_path: pathlib.Path):
     file_path.write_bytes(response.content)
 
 
-@pytest.fixture(scope="module")
-def icon_grid_simple_path(pytestconfig):
+@pytest.fixture(scope="session")
+def icon_grid_path(pytestconfig):
     url = "https://github.com/agoscinski/icon-testfiles/raw/refs/heads/main/icon_grid_0013_R02B04_R.nc"
-    filename = "icon_grid_simple.nc"
+    filename = "icon_grid_0013_R02B04_R.nc"
     cache_dir = pytestconfig.cache.mkdir("downloaded_files")
     icon_grid_path = cache_dir / filename
 
@@ -47,6 +50,7 @@ def icon_grid_simple_path(pytestconfig):
 
 
 @pytest.fixture
+@pytest.mark.requires_icon
 def icon_filepath_executable() -> str:
     which_icon = subprocess.run(["which", "icon"], capture_output=True, check=False)
     if which_icon.returncode:
@@ -62,10 +66,12 @@ def minimal_config() -> models.ConfigWorkflow:
         name="minimal",
         rootdir=pathlib.Path("minimal"),
         cycles=[models.ConfigCycle(name="minimal", tasks=[models.ConfigCycleTask(name="some_task")])],
-        tasks=[models.ConfigShellTask(name="some_task", command="some_command")],
+        tasks=[models.ConfigShellTask(name="some_task", command="some_command", computer="localhost")],
         data=models.ConfigData(
-            available=[models.ConfigAvailableData(name="foo", type=models.DataType.FILE, src=pathlib.Path("foo.txt"))],
-            generated=[models.ConfigGeneratedData(name="bar", type=models.DataType.DIR, src=pathlib.Path("bar"))],
+            available=[
+                models.ConfigAvailableData(name="available", computer="localhost", src=pathlib.Path("/foo.txt"))
+            ],
+            generated=[models.ConfigGeneratedData(name="bar", src=pathlib.Path("bar"))],
         ),
         parameters={},
     )
@@ -94,16 +100,16 @@ def minimal_invert_task_io_config() -> models.ConfigWorkflow:
             ),
         ],
         tasks=[
-            models.ConfigShellTask(name="task_a", command="command_a"),
-            models.ConfigShellTask(name="task_b", command="command_b"),
+            models.ConfigShellTask(name="task_a", computer="localhost", command="command_a"),
+            models.ConfigShellTask(name="task_b", computer="localhost", command="command_b"),
         ],
         data=models.ConfigData(
             available=[
-                models.ConfigAvailableData(name="available", type=models.DataType.FILE, src=pathlib.Path("foo.txt"))
+                models.ConfigAvailableData(name="available", computer="localhost", src=pathlib.Path("/foo.txt"))
             ],
             generated=[
-                models.ConfigGeneratedData(name="output_a", type=models.DataType.DIR, src=pathlib.Path("bar")),
-                models.ConfigGeneratedData(name="output_b", type=models.DataType.DIR, src=pathlib.Path("bar")),
+                models.ConfigGeneratedData(name="output_a", src=pathlib.Path("bar")),
+                models.ConfigGeneratedData(name="output_b", src=pathlib.Path("bar")),
             ],
         ),
         parameters={},
@@ -111,7 +117,7 @@ def minimal_invert_task_io_config() -> models.ConfigWorkflow:
 
 
 # configs that are tested for parsing
-ALL_CONFIG_CASES = ["small", "parameters", "large"]
+ALL_CONFIG_CASES = ["small-shell", "small-icon", "parameters", "large"]
 
 
 @pytest.fixture(params=ALL_CONFIG_CASES)
@@ -133,12 +139,34 @@ def generate_config_paths(test_case: str):
 
 
 @pytest.fixture
-def config_paths(config_case) -> dict[str, pathlib.Path]:
-    return generate_config_paths(config_case)
+def config_paths(config_case, icon_grid_path, tmp_path, test_rootdir) -> dict[str, pathlib.Path]:
+    config = generate_config_paths(config_case)
+    # Copy test directory to tmp path and adapt config
+    shutil.copytree(test_rootdir / f"tests/cases/{config_case}", tmp_path / f"tests/cases/{config_case}")
+    for key, value in config.items():
+        config[key] = tmp_path / value
+
+    # Expand /TESTS_ROOTDIR to directory where config is located
+    for key in ["yml", "txt"]:
+        config[key].write_text(config[key].read_text().replace("/TESTS_ROOTDIR", str(tmp_path)))
+
+    if config_case == "small-icon":
+        config_rootdir = config["yml"].parent
+        # We link the icon grid as specified in the model.namelist
+        config_icon_grid_path = pathlib.Path(config_rootdir / "./ICON/icon_grid_simple.nc")
+        if not config_icon_grid_path.exists():
+            config_icon_grid_path.symlink_to(icon_grid_path)
+    return config
 
 
 def pytest_addoption(parser):
     parser.addoption("--reserialize", action="store_true", default=False)
+    parser.addoption(
+        "--remote",
+        action="store",
+        default="localhost-ssh",
+        help="Specify an aiida computer label for a remote machine that has been configured before tests and should be used.",
+    )
 
 
 def serialize_worklfow(config_paths: dict[str, pathlib.Path], workflow: workflow.Workflow) -> None:
@@ -157,6 +185,44 @@ def pytest_configure(config):
         LOGGER.info("Regenerating serialized references")
         for config_case in ALL_CONFIG_CASES:
             config_paths = generate_config_paths(config_case)
+            for key, value in config_paths.items():
+                config_paths[key] = pathlib.Path(config.rootdir) / value
             wf = workflow.Workflow.from_config_file(str(config_paths["yml"]))
             serialize_worklfow(config_paths=config_paths, workflow=wf)
             serialize_nml(config_paths=config_paths, workflow=wf)
+
+
+@pytest.fixture
+def aiida_localhost_ssh(aiida_computer_ssh):
+    try:
+        computer = load_computer("remote")
+    except NotExistent:
+        computer = aiida_computer_ssh(label="remote")
+    return computer
+
+
+@pytest.fixture
+def aiida_remote_computer(request, aiida_localhost_ssh):
+    comp_spec = request.config.getoption("remote")
+
+    # PRCOMMENT: This is just the normal localhost fixture. So we remove that option and just use the default
+    # `aiida_localhost` fixture, in addition to the `aiida_remote_computer` one that depends on the pytest-marker
+    # if comp_spec == 'localhost-local':
+    #     # Create localhost_local
+    #     aiida_localhost_local
+    if comp_spec == "localhost-ssh":
+        # Create localhost_ssh
+        _ = aiida_localhost_ssh
+    elif comp_spec == "cscs-ci":
+        # PRCOMMENT: Add this infrastructure in another PR
+        msg = "Infrastructure for FirecREST net setup yet."
+        raise NotImplementedError(msg)
+    else:
+        msg = f"Wrong `remote` marker specified: {comp_spec}. Choose either `localhost-ssh` or `cscs-ci`."
+        raise ValueError(msg)
+
+
+@pytest.fixture(scope="session")
+def test_rootdir(pytestconfig):
+    """The directory of the project independent from where the tests are started"""
+    return pathlib.Path(pytestconfig.rootdir)
