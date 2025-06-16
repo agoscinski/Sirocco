@@ -60,15 +60,6 @@ def icon_filepath_executable() -> str:
     return which_icon.stdout.decode().strip()
 
 
-@pytest.fixture
-def aiida_localhost_ssh(aiida_computer_ssh):
-    try:
-        computer = load_computer("localhost_ssh")
-    except NotExistent:
-        computer = aiida_computer_ssh(label="localhost_ssh")
-    return computer
-
-
 @pytest.fixture(scope="session")
 def minimal_config() -> models.ConfigWorkflow:
     return models.ConfigWorkflow(
@@ -170,7 +161,12 @@ def config_paths(config_case, icon_grid_path, tmp_path, test_rootdir) -> dict[st
 
 def pytest_addoption(parser):
     parser.addoption("--reserialize", action="store_true", default=False)
-    parser.addoption("--remote", action="store", default=None, default=False, help="Specify an aiida computer label for a remote machine that has been configured before tests and should be used.")
+    parser.addoption(
+        "--remote",
+        action="store",
+        default="localhost-ssh",
+        help="Specify an aiida computer label for a remote machine that has been configured before tests and should be used.",
+    )
 
 
 def serialize_worklfow(config_paths: dict[str, pathlib.Path], workflow: workflow.Workflow) -> None:
@@ -195,8 +191,36 @@ def pytest_configure(config):
             serialize_worklfow(config_paths=config_paths, workflow=wf)
             serialize_nml(config_paths=config_paths, workflow=wf)
 
-def aiida_remote_computer(request):
-    request.config.getoption("remote")
+
+@pytest.fixture
+def aiida_localhost_ssh(aiida_computer_ssh):
+    try:
+        computer = load_computer("remote")
+    except NotExistent:
+        computer = aiida_computer_ssh(label="remote")
+    return computer
+
+
+@pytest.fixture
+def aiida_remote_computer(request, aiida_localhost_ssh):
+    comp_spec = request.config.getoption("remote")
+
+    # PRCOMMENT: This is just the normal localhost fixture. So we remove that option and just use the default
+    # `aiida_localhost` fixture, in addition to the `aiida_remote_computer` one that depends on the pytest-marker
+    # if comp_spec == 'localhost-local':
+    #     # Create localhost_local
+    #     aiida_localhost_local
+    if comp_spec == "localhost-ssh":
+        # Create localhost_ssh
+        _ = aiida_localhost_ssh
+    elif comp_spec == "cscs-ci":
+        # PRCOMMENT: Add this infrastructure in another PR
+        msg = "Infrastructure for FirecREST net setup yet."
+        raise NotImplementedError(msg)
+    else:
+        msg = f"Wrong `remote` marker specified: {comp_spec}. Choose either `localhost-ssh` or `cscs-ci`."
+        raise ValueError(msg)
+
 
 @pytest.fixture(scope="session")
 def test_rootdir(pytestconfig):
