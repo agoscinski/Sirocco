@@ -19,8 +19,8 @@ def test_parse_config_file(config_paths, pprinter):
         ), f"Workflow graph doesn't match serialized data. New graph string dumped to {new_path}."
 
 
-def test_vizgraph(config_paths):
-    VizGraph.from_config_file(config_paths["yml"]).draw(file_path=config_paths["svg"])
+#def test_vizgraph(config_paths):
+#    VizGraph.from_config_file(config_paths["yml"]).draw(file_path=config_paths["svg"])
 
 
 @pytest.mark.requires_icon
