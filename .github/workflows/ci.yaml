@@ -38,7 +38,7 @@ jobs:
       env:
         PYTEST_ADDOPTS: "--durations=0"
       run: |
-        hatch -- test -m "not requires_icon" --cover --parallel --remote --localhost-ssh
+        hatch -- test -m "not requires_icon" --cover --parallel --remote localhost-ssh
 
   docs:
     runs-on: ubuntu-latest
