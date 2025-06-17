@@ -292,7 +292,7 @@ def aiida_remote_computer(request, aiida_computer_session, test_rootdir):
             # FIXME: intermangles computer setup and CI specific needs, need to pass this information somehow from CI
             computer.set_prepend_text(f""". /home/runner/work/Sirocco/Sirocco/spack/share/spack/setup-env.sh || true
 spack env activate {test_rootdir} || true""")
-            reutrn computer
+            return computer
 
     elif comp_spec == "cscs-ci":  # noqa: RET505 | superfluous-else-return
         msg = "Infrastructure for FirecREST net setup yet."
