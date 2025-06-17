@@ -290,6 +290,10 @@ class AiidaWorkGraph:
             raise ValueError(msg) from err
 
         label_uuid = str(uuid.uuid4())
+        computer.clone()
+        if task.mpi_command:
+            computer.set_mpirun_command(task.mpi_command)
+
         icon_code = aiida.orm.InstalledCode(
             label=f"icon-{label_uuid}",
             description="aiida_icon",
@@ -323,17 +327,22 @@ class AiidaWorkGraph:
         self._aiida_task_nodes[task_label] = self._workgraph.add_task(builder)
 
     def _from_task_get_scheduler_metadata(self, task: core.Task) -> dict[str, Any]:
+        # We need to do this to handle aiida errors
+        if task.
+            resources = {}
+            num_cores_per_mpiproc
+                "resources": {
+                    "num_machines": task.nodes if task.nodes is ,
+                    "num_mpiprocs_per_machine": task.ntasks_per_node,
+                    "num_cores_per_mpiproc": task.cpus_per_task,
+                },
+            
         return {
             "options": {
                 "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime)
                 if task.walltime is not None
                 else None,
                 "max_memory_kb": task.mem * 1024 if task.mem is not None else task.mem,
-                "resources": {
-                    "num_machines": task.nodes,
-                    "num_mpiprocs_per_machine": task.ntasks_per_node,
-                    "num_cores_per_mpiproc": task.cpus_per_task,
-                },
             }
         }
 

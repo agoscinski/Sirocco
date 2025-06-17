@@ -261,6 +261,7 @@ class ConfigBaseTaskSpecs:
     cpus_per_task: int | None = None  # SLURM option `--cpus_per_task`, AiiDA option `num_cores_per_mpiproc`
 
 
+
 class ConfigBaseTask(_NamedBaseModel, ConfigBaseTaskSpecs):
     """
     Config for generic task, no plugin specifics.
@@ -283,7 +284,6 @@ class ConfigBaseTask(_NamedBaseModel, ConfigBaseTaskSpecs):
         except ValueError as e:
             msg = f"walltime must be in HH:MM:SS format, got '{value}'"
             raise ValueError(msg) from e
-
 
 class ConfigRootTask(ConfigBaseTask):
     plugin: ClassVar[Literal["_root"]] = "_root"
