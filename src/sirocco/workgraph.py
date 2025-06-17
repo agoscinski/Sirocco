@@ -325,7 +325,9 @@ class AiidaWorkGraph:
     def _from_task_get_scheduler_metadata(self, task: core.Task) -> dict[str, Any]:
         return {
             "options": {
-                "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime) if task.walltime is not None else None,
+                "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime)
+                if task.walltime is not None
+                else None,
                 "max_memory_kb": task.mem * 1024 if task.mem is not None else task.mem,
                 "resources": {
                     "num_machines": task.nodes,

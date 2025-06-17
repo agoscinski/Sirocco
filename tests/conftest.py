@@ -278,23 +278,23 @@ def aiida_remote_computer(request, aiida_computer_session, test_rootdir):
             )
 
         return computer
-    elif comp_spec == "test-integration":
-            computer = load_computer("remote")
-            computer = aiida_computer_session(label="remote", hostname="localhost", transport_type="core.ssh")
+    elif comp_spec == "test-integration":  # noqa: RET505 | superfluous-else-return
+        computer = load_computer("remote")
+        computer = aiida_computer_session(label="remote", hostname="localhost", transport_type="core.ssh")
 
-            computer.configure(
-                key_filename=f"{os.environ['HOME']}/.ssh/id_rsa",
-                key_policy="AutoAddPolicy",
-                safe_interval=0.1,
-            )
+        computer.configure(
+            key_filename=f"{os.environ['HOME']}/.ssh/id_rsa",
+            key_policy="AutoAddPolicy",
+            safe_interval=0.1,
+        )
 
-            # required to load mpi and options for icon
-            # FIXME: intermangles computer setup and CI specific needs, need to pass this information somehow from CI
-            computer.set_prepend_text(f""". /home/runner/work/Sirocco/Sirocco/spack/share/spack/setup-env.sh || true
-spack env activate {test_rootdir} || true""")
-            return computer
+        # required to load mpi and options for icon
+        # FIXME: intermangles computer setup and CI specific needs, need to pass this information somehow from CI
+        computer.set_prepend_text(f""". /home/runner/work/Sirocco/Sirocco/spack/share/spack/setup-env.sh || true
+spack env activate {test_rootdir}""")
+        return computer
 
-    elif comp_spec == "cscs-ci":  # noqa: RET505 | superfluous-else-return
+    elif comp_spec == "cscs-ci":
         msg = "Infrastructure for FirecREST net setup yet."
         raise NotImplementedError(msg)
     else:
