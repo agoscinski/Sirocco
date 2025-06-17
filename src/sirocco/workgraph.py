@@ -278,6 +278,21 @@ class AiidaWorkGraph:
 
         self._aiida_task_nodes[label] = workgraph_task
 
+    def _duplicate_aiida_computer(self):
+        from aiida.orm.utils.builders.computer import ComputerBuilder
+
+        ctx.computer_builder = ComputerBuilder.from_computer(value)
+        return value
+
+
+        kwargs['transport'] = kwargs['transport'].name
+        kwargs['scheduler'] = kwargs['scheduler'].name
+
+        computer_builder = ctx.computer_builder
+        for key, value in kwargs.items():
+            if value is not None:
+                setattr(computer_builder, key, value)
+
     @create_task_node.register
     def _create_icon_task_node(self, task: core.IconTask):
         task_label = self.get_aiida_label_from_graph_item(task)
