@@ -20,7 +20,6 @@ from pydantic import (
     field_validator,
     model_validator,
 )
-from pydantic_core.core_schema import field_wrap_validator_function
 from ruamel.yaml import YAML
 
 from sirocco.parsing.cycling import Cycling, DateCycling, OneOff
@@ -262,7 +261,8 @@ class ConfigBaseTaskSpecs:
     @model_validator(mode="after")
     def check_parameters(self) -> Self:
         if self.mpi_cmd is not None and "{MPI_TOTAL_PROCS}" in self.mpi_cmd and self.resource is None:
-            raise ValueError(f"Cannot use '{{MPI_TOTAL_PROCS}}' in mpirun command when resource is not specified as we use it to resolve it.")
+            msg = "Cannot use '{MPI_TOTAL_PROCS}' in mpirun command when resource is not specified as we use it to resolve it."
+            raise ValueError(msg)
         return self
 
 @dataclass(kw_only=True)

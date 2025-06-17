@@ -286,7 +286,7 @@ def aiida_remote_computer(request, aiida_computer_session, test_rootdir):
             )
 
         return computer
-    elif comp_spec == "test-integration":  # noqa: RET505 | superfluous-else-return
+    elif comp_spec == "test-integration":  # | superfluous-else-return
         computer = aiida_computer_session(label="remote", hostname="localhost", transport_type="core.ssh")
 
         computer.configure(
