@@ -278,6 +278,9 @@ class ConfigComputingResourceSpec:
 
 class ConfigComputingResource(_BaseModel, ConfigComputingResourceSpec):
 
+    # need to redefine to give pydantic default
+    uenv: dict = Field(default_factory=dict)
+
     @field_validator("walltime")
     @classmethod
     def validate_walltime_format(cls, value: str | None) -> str | None:

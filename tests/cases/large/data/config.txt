@@ -9,9 +9,7 @@ cycles:
             name: 'extpar'
             coordinates: {}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 1
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=1 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: []
             plugin: 'shell'
             command: 'extpar --verbose --input {PORT::obs}'
@@ -28,9 +26,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2025, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-01-01 00:00:00 -- 2025-03-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -46,9 +42,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2025, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-01-01 00:00:00 -- 2025-03-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -60,9 +54,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2025, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-01-01 00:00:00 -- 2025-03-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -77,8 +69,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2025, 1, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-01-01 00:00:00 -- 2025-03-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -95,9 +86,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2025, 3, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-03-01 00:00:00 -- 2025-05-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -114,9 +103,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2025, 3, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-03-01 00:00:00 -- 2025-05-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -128,9 +115,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2025, 3, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-03-01 00:00:00 -- 2025-05-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -145,8 +130,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2025, 3, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-03-01 00:00:00 -- 2025-05-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -165,9 +149,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2025, 5, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-05-01 00:00:00 -- 2025-07-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -184,9 +166,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2025, 5, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-05-01 00:00:00 -- 2025-07-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -198,9 +178,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2025, 5, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-05-01 00:00:00 -- 2025-07-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -215,8 +193,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2025, 5, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-05-01 00:00:00 -- 2025-07-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -235,9 +212,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2025, 7, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-07-01 00:00:00 -- 2025-09-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -254,9 +229,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2025, 7, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-07-01 00:00:00 -- 2025-09-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -268,9 +241,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2025, 7, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-07-01 00:00:00 -- 2025-09-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -285,8 +256,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2025, 7, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-07-01 00:00:00 -- 2025-09-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -305,9 +275,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2025, 9, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-09-01 00:00:00 -- 2025-11-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -324,9 +292,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2025, 9, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-09-01 00:00:00 -- 2025-11-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -338,9 +304,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2025, 9, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-09-01 00:00:00 -- 2025-11-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -355,8 +319,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2025, 9, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-09-01 00:00:00 -- 2025-11-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -375,9 +338,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2025, 11, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-11-01 00:00:00 -- 2026-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -394,9 +355,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2025, 11, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-11-01 00:00:00 -- 2026-01-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -408,9 +367,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2025, 11, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-11-01 00:00:00 -- 2026-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -425,8 +382,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2025, 11, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-11-01 00:00:00 -- 2026-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -445,9 +401,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2026, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-01-01 00:00:00 -- 2026-03-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -464,9 +418,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-01-01 00:00:00 -- 2026-03-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -478,9 +430,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2026, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-01-01 00:00:00 -- 2026-03-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -495,8 +445,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2026, 1, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-01-01 00:00:00 -- 2026-03-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -515,9 +464,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2026, 3, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-03-01 00:00:00 -- 2026-05-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -534,9 +481,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 3, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-03-01 00:00:00 -- 2026-05-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -548,9 +493,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2026, 3, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-03-01 00:00:00 -- 2026-05-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -565,8 +508,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2026, 3, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-03-01 00:00:00 -- 2026-05-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -585,9 +527,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2026, 5, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-05-01 00:00:00 -- 2026-07-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -604,9 +544,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 5, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-05-01 00:00:00 -- 2026-07-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -618,9 +556,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2026, 5, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-05-01 00:00:00 -- 2026-07-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -635,8 +571,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2026, 5, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-05-01 00:00:00 -- 2026-07-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -655,9 +590,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2026, 7, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-07-01 00:00:00 -- 2026-09-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -674,9 +607,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 7, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-07-01 00:00:00 -- 2026-09-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -688,9 +619,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2026, 7, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-07-01 00:00:00 -- 2026-09-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -705,8 +634,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2026, 7, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-07-01 00:00:00 -- 2026-09-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -725,9 +653,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2026, 9, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-09-01 00:00:00 -- 2026-11-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -744,9 +670,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 9, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-09-01 00:00:00 -- 2026-11-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -758,9 +682,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2026, 9, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-09-01 00:00:00 -- 2026-11-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -775,8 +697,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2026, 9, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-09-01 00:00:00 -- 2026-11-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -795,9 +716,7 @@ cycles:
             name: 'preproc'
             coordinates: {'date': datetime.datetime(2026, 11, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 4
-            walltime: '00:02:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=4 walltime='00:02:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-11-01 00:00:00 -- 2027-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash cleanup.sh -p {PORT::extpar} -e {PORT::era} {PORT::grid}'
@@ -814,9 +733,7 @@ cycles:
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 11, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 40
-            walltime: '23:59:59'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=40 walltime='23:59:59' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-11-01 00:00:00 -- 2027-01-01 00:00:00]
             plugin: 'icon'
             namelists: [NamelistFile(name='icon_master.namelist'), NamelistFile(name='NAMELIST_exclaim_ape_R02B04')]
@@ -828,9 +745,7 @@ cycles:
             name: 'postproc_1'
             coordinates: {'date': datetime.datetime(2026, 11, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-11-01 00:00:00 -- 2027-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_ocn.sh {PORT::None}'
@@ -845,8 +760,7 @@ cycles:
             name: 'store_and_clean_1'
             coordinates: {'date': datetime.datetime(2026, 11, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-11-01 00:00:00 -- 2027-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh {PORT::postout} {PORT::streams} {PORT::icon_input}'
@@ -866,9 +780,7 @@ cycles:
             name: 'postproc_2'
             coordinates: {'date': datetime.datetime(2025, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-01-01 00:00:00 -- 2026-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_atm.sh --input {PORT::streams}'
@@ -887,8 +799,7 @@ cycles:
             name: 'store_and_clean_2'
             coordinates: {'date': datetime.datetime(2025, 1, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2025-01-01 00:00:00 -- 2026-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh --archive {PORT::archive} --clean {PORT::clean}'
@@ -908,9 +819,7 @@ cycles:
             name: 'postproc_2'
             coordinates: {'date': datetime.datetime(2026, 1, 1, 0, 0)}
             computer: 'remote'
-            uenv: {'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'}
-            nodes: 2
-            walltime: '00:05:00'
+            resource: uenv={'squashfs': 'path/to/squashfs', 'mount_point': 'runtime/mount/point'} nodes=2 walltime='00:05:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-01-01 00:00:00 -- 2027-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash main_script_atm.sh --input {PORT::streams}'
@@ -929,8 +838,7 @@ cycles:
             name: 'store_and_clean_2'
             coordinates: {'date': datetime.datetime(2026, 1, 1, 0, 0)}
             computer: 'remote'
-            nodes: 1
-            walltime: '00:01:00'
+            resource: uenv={} nodes=1 walltime='00:01:00' ntasks_per_node=1 mem=1024 cpus_per_task=1
             cycle point: [2026-01-01 00:00:00 -- 2027-01-01 00:00:00]
             plugin: 'shell'
             command: 'bash post_clean.sh --archive {PORT::archive} --clean {PORT::clean}'
