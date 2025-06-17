@@ -1,7 +1,12 @@
 spack:
   view: /opt/view
   specs:
+<<<<<<< Updated upstream
   - icon +mpi ~aes ~jsbach ~ocean ~coupling ~rte-rrtmgp
+=======
+  - icon ~aes ~jsbach ~ocean ~coupling ~rte-rrtmgp
+  - openmpi
+>>>>>>> Stashed changes
 
   compilers:
   - compiler:
