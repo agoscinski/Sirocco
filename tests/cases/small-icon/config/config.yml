@@ -31,14 +31,13 @@ cycles:
                   port: finish_status
               - restart:
                   port: latest_restart_file
-  # TODO bring back once mpi option is in shell task
-  #- lastly:
-  #    tasks:
-  #      - cleanup:
-  #          wait_on:
-  #            - icon:
-  #                target_cycle:
-  #                  date: 2026-05-01T00:00
+  - lastly:
+      tasks:
+        - cleanup:
+            wait_on:
+              - icon:
+                  target_cycle:
+                    date: 2026-05-01T00:00
 tasks:
   - icon:
       plugin: icon
@@ -50,19 +49,18 @@ tasks:
       walltime: 00:05:00
       nodes: 1
       ntasks_per_node: 1
-      mem_per_node_mb: 1024
+      mem: 1024
       cpus_per_task: 1
   - cleanup:
       plugin: shell
       computer: remote
       src: scripts/cleanup.py
       command: "python cleanup.py"
-      # TODO
-      #walltime: 00:05:00
-      #nodes: 1
-      #ntasks_per_node: 1
-      #mem_per_node_mb: 1024
-      #cpus_per_task: 1
+      walltime: 00:05:00
+      nodes: 1
+      ntasks_per_node: 1
+      mem: 1024
+      cpus_per_task: 1
 data:
   available:
      - icon_grid_simple:

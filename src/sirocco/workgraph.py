@@ -250,8 +250,9 @@ class AiidaWorkGraph:
         metadata["options"] = {"prepend_text": prepend_text}
         # NOTE: Hardcoded for now, possibly make user-facing option (see issue #159)
         metadata["options"]["use_symlinks"] = True
-
+        metadata.update(self._from_task_get_scheduler_metadata(task))
         ## computer
+
         if task.computer is not None:
             try:
                 metadata["computer"] = aiida.orm.load_computer(task.computer)
@@ -315,11 +316,17 @@ class AiidaWorkGraph:
             builder.model_namelist = aiida.orm.SinglefileData(buffer, task.model_namelist.name)
 
         # Set runtime information
-        # FIXME: Set some defaults. Don't do this in the *Specs class, as we plan to inherit from `root`
-        metadata = {
+        metadata = {}
+        metadata.update(self._from_task_get_scheduler_metadata(task))
+        builder.metadata = metadata
+
+        self._aiida_task_nodes[task_label] = self._workgraph.add_task(builder)
+
+    def _from_task_get_scheduler_metadata(self, task: core.Task) -> dict[str, Any]:
+        return {
             "options": {
-                "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime) if task.walltime else None,
-                "max_memory_kb": task.mem * 1024 if task.mem else 1024,
+                "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime) if task.walltime is not None else None,
+                "max_memory_kb": task.mem * 1024 if task.mem is not None else task.mem,
                 "resources": {
                     "num_machines": task.nodes,
                     "num_mpiprocs_per_machine": task.ntasks_per_node,
@@ -327,9 +334,6 @@ class AiidaWorkGraph:
                 },
             }
         }
-        builder.metadata = metadata
-
-        self._aiida_task_nodes[task_label] = self._workgraph.add_task(builder)
 
     @functools.singledispatchmethod
     def _link_output_node_to_task(self, task: core.Task, port: str, output: core.Data):  # noqa: ARG002
