@@ -319,7 +319,7 @@ class AiidaWorkGraph:
         metadata = {
             "options": {
                 "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime) if task.walltime else None,
-                "max_memory_kb": task.mem_per_node_mb * 1024 if task.mem_per_node_mb else 1024,
+                "max_memory_kb": task.mem * 1024 if task.mem else 1024,
                 "resources": {
                     "num_machines": task.nodes,
                     "num_mpiprocs_per_machine": task.ntasks_per_node,
