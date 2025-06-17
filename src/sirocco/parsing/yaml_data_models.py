@@ -259,6 +259,7 @@ class ConfigBaseTaskSpecs:
     ntasks_per_node: int | None = None  # SLURM option `--ntasks-per-node`, AiiDA option `num_mpiprocs_per_machine`
     mem: int | None = None  # SLURM option `--mem` in MB, AiiDA option `max_memory_kb` in KB
     cpus_per_task: int | None = None  # SLURM option `--cpus_per_task`, AiiDA option `num_cores_per_mpiproc`
+    mpi_cmd: str | None = None
 
 
 

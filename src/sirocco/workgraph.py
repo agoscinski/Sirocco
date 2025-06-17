@@ -278,11 +278,9 @@ class AiidaWorkGraph:
 
         self._aiida_task_nodes[label] = workgraph_task
 
-    def _duplicate_aiida_computer(self):
+    def _duplicate_aiida_computer(self, computer: aiida.orm.Comupter):
         from aiida.orm.utils.builders.computer import ComputerBuilder
-
-        ctx.computer_builder = ComputerBuilder.from_computer(value)
-        return value
+        computer_builder = ComputerBuilder.from_computer(computer)
 
 
         kwargs['transport'] = kwargs['transport'].name
@@ -304,10 +302,14 @@ class AiidaWorkGraph:
             msg = f"Could not find computer {task.computer!r} in AiiDA database. One needs to create and configure the computer before running a workflow."
             raise ValueError(msg) from err
 
+        # ... TODO doc
         label_uuid = str(uuid.uuid4())
-        computer.clone()
-        if task.mpi_command:
-            computer.set_mpirun_command(task.mpi_command)
+        from aiida.orm.utils.builders.computer import ComputerBuilder
+        computer_builder = ComputerBuilder.from_computer(computer)
+        computer_builder.label = computer.label + f"-{label_uuid}"
+        if task.mpi_cmd:
+            computer_builder.mpirun_command(task.mpi_cmd)
+        computer = computer_builder.new()
 
         icon_code = aiida.orm.InstalledCode(
             label=f"icon-{label_uuid}",
@@ -315,7 +317,7 @@ class AiidaWorkGraph:
             default_calc_job_plugin="icon.icon",
             computer=computer,
             filepath_executable=str(task.bin),
-            with_mpi=True,
+            with_mpi=bool(task.mpi_cmd),
             use_double_quotes=True,
         ).store()
 
