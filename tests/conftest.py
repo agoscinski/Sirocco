@@ -262,7 +262,7 @@ def aiida_computer_session(tmp_path_factory) -> t.Callable[[], "Computer"]:
 
 
 @pytest.fixture(scope="session")
-def aiida_remote_computer(request, aiida_computer_session):
+def aiida_remote_computer(request, aiida_computer_session, test_rootdir):
     comp_spec = request.config.getoption("remote")
 
     if comp_spec == "localhost-ssh":
@@ -276,6 +276,8 @@ def aiida_remote_computer(request, aiida_computer_session):
                 key_policy="AutoAddPolicy",
                 safe_interval=0.1,
             )
+            computer.set_prepend_text(f""". /home/runner/work/Sirocco/Sirocco/spack/share/spack/setup-env.sh
+spack env activate {test_rootdir}""")
 
         return computer
 
