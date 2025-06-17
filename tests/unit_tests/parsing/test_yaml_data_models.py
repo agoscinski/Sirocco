@@ -1,5 +1,3 @@
-import textwrap
-
 import pytest
 
 from sirocco.parsing import yaml_data_models as models
@@ -7,34 +5,6 @@ from sirocco.parsing import yaml_data_models as models
 
 def test_base_data():
     models.ConfigBaseData(name="name", src="foo.txt", format=None)
-
-
-@pytest.fixture
-def minimal_config_path(tmp_path):
-    minimal_config = textwrap.dedent(
-        """
-        cycles:
-          - minimal:
-              tasks:
-                - a:
-        tasks:
-          - b:
-              plugin: shell
-              computer: localhost
-              command: some_command
-        data:
-          available:
-            - c:
-                computer: "localhost"
-                src: "/c.txt"
-          generated:
-            - d:
-                src: "d"
-        """
-    )
-    minimal = tmp_path / "minimal.yml"
-    minimal.write_text(minimal_config)
-    return minimal
 
 
 def test_load_workflow_config(minimal_config_path):

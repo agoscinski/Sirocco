@@ -3,6 +3,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import textwrap
 import typing as t
 
 import pytest
@@ -291,3 +292,32 @@ def aiida_remote_computer(request, aiida_computer_session):
 def test_rootdir(pytestconfig):
     """The directory of the project independent from where the tests are started"""
     return pathlib.Path(pytestconfig.rootdir)
+
+
+@pytest.fixture
+def minimal_config_path(tmp_path):
+    minimal_config = textwrap.dedent(
+        """
+        name: minimal
+        cycles:
+          - minimal:
+              tasks:
+                - a:
+        tasks:
+          - a:
+              plugin: shell
+              computer: localhost
+              command: some_command
+        data:
+          available:
+            - c:
+                computer: "localhost"
+                src: "/c.txt"
+          generated:
+            - d:
+                src: "d"
+        """
+    )
+    minimal = tmp_path / "minimal.yml"
+    minimal.write_text(minimal_config)
+    return minimal
