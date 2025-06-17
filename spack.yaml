@@ -1,7 +1,7 @@
 spack:
   view: /opt/view
   specs:
-  - icon ~aes ~jsbach ~ocean ~coupling ~rte-rrtmgp
+  - icon +mpi ~aes ~jsbach ~ocean ~coupling ~rte-rrtmgp
 
   compilers:
   - compiler:
