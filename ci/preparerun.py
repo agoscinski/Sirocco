@@ -58,7 +58,7 @@ print("yml", yml_path, "content:\n", yml_path.read_text())
 
 computer = load_computer('remote')
 prepend_text = f"""
-TODO matthieu what to set for santis?
+#TODO matthieu what to set for santis?
 
 # TODO ali workaround because we cannot put gridfile
 wget https://github.com/agoscinski/icon-testfiles/raw/refs/heads/main/icon_grid_0013_R02B04_R.nc
@@ -96,6 +96,12 @@ with transport:
 core_workflow = Workflow.from_config_file(str(yml_path))
 aiida_workflow = AiidaWorkGraph(core_workflow)
 output_node = aiida_workflow.run()
+
+remote_bin_path = Path(REMOTE_TESTSDIR) / Path("tests/cases/small-icon/config/ICON/bin/icon")
+icon_bin_path = "/capstor/store/cscs/userlab/cwd01/leclairm/archive_icon_build/cpu/icon-nwp/bin/icon"
+with transport:
+    transport.symlink(icon_bin_path, remote_bin_path)
+
 
 print("output_node.is_finished_ok", output_node.is_finished_ok)
 if not output_node.is_finished_ok:
