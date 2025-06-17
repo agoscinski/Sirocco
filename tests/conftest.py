@@ -265,7 +265,15 @@ def aiida_computer_session(tmp_path_factory) -> t.Callable[[], "Computer"]:
 def aiida_remote_computer(request, aiida_computer_session, test_rootdir):
     comp_spec = request.config.getoption("remote")
 
-    if comp_spec == "localhost-ssh":
+    if comp_spec == "localhost":
+        try:
+            computer = load_computer("remote")
+        except NotExistent:
+            computer = aiida_computer_session(label="remote", hostname="localhost", transport_type="core.local")
+
+        computer.configure()
+        return computer
+    elif comp_spec == "localhost-ssh":
         try:
             computer = load_computer("remote")
         except NotExistent:

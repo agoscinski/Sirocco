@@ -9,6 +9,7 @@ from sirocco.parsing.yaml_data_models import (
     ConfigAvailableData,
     ConfigBaseDataSpecs,
     ConfigBaseTaskSpecs,
+    ConfigComputingResourceSpec,
 )
 
 if TYPE_CHECKING:
@@ -62,6 +63,9 @@ class AvailableData(Data):
 class GeneratedData(Data):
     pass
 
+
+class ComputingResource(ConfigComputingResourceSpec):
+    pass
 
 @dataclass(kw_only=True)
 class Task(ConfigBaseTaskSpecs, GraphItem):

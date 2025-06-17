@@ -250,7 +250,8 @@ class AiidaWorkGraph:
         metadata["options"] = {"prepend_text": prepend_text}
         # NOTE: Hardcoded for now, possibly make user-facing option (see issue #159)
         metadata["options"]["use_symlinks"] = True
-        metadata.update(self._from_task_get_scheduler_metadata(task))
+        if task.resource:
+            metadata.update(self._from_task_get_scheduler_metadata(task.resource))
         ## computer
 
         if task.computer is not None:
@@ -278,19 +279,6 @@ class AiidaWorkGraph:
 
         self._aiida_task_nodes[label] = workgraph_task
 
-    def _duplicate_aiida_computer(self, computer: aiida.orm.Comupter):
-        from aiida.orm.utils.builders.computer import ComputerBuilder
-        computer_builder = ComputerBuilder.from_computer(computer)
-
-
-        kwargs['transport'] = kwargs['transport'].name
-        kwargs['scheduler'] = kwargs['scheduler'].name
-
-        computer_builder = ctx.computer_builder
-        for key, value in kwargs.items():
-            if value is not None:
-                setattr(computer_builder, key, value)
-
     @create_task_node.register
     def _create_icon_task_node(self, task: core.IconTask):
         task_label = self.get_aiida_label_from_graph_item(task)
@@ -302,13 +290,20 @@ class AiidaWorkGraph:
             msg = f"Could not find computer {task.computer!r} in AiiDA database. One needs to create and configure the computer before running a workflow."
             raise ValueError(msg) from err
 
-        # ... TODO doc
+        # FIXME: computer needs to only created once per workflow per task, not for every instance of task
+        # Since the mpirun command is part of the computer and two tasks might use
+        # the same computer, we need to create a new computer for each task type
         label_uuid = str(uuid.uuid4())
         from aiida.orm.utils.builders.computer import ComputerBuilder
         computer_builder = ComputerBuilder.from_computer(computer)
         computer_builder.label = computer.label + f"-{label_uuid}"
+
+        # TODO move to some more generic task option
         if task.mpi_cmd:
-            computer_builder.mpirun_command(task.mpi_cmd)
+            # PRCOMMENT I just used the naming for this as used in Matthieu's sbatch scripts
+            # FIXME: use enums from core
+            # parse options mpi_cmd
+            computer_builder.mpirun_command(task.mpi_cmd.replace("{MPI_TOTAL_PROCS}", "{tot_num_mpiprocs}"))
         computer = computer_builder.new()
 
         icon_code = aiida.orm.InstalledCode(
@@ -338,28 +333,22 @@ class AiidaWorkGraph:
 
         # Set runtime information
         metadata = {}
-        metadata.update(self._from_task_get_scheduler_metadata(task))
+        # TODO EVERY TASK
+        if task.resource:
+            metadata.update(self._from_task_get_scheduler_metadata(task.resource))
         builder.metadata = metadata
 
         self._aiida_task_nodes[task_label] = self._workgraph.add_task(builder)
 
-    def _from_task_get_scheduler_metadata(self, task: core.Task) -> dict[str, Any]:
-        # We need to do this to handle aiida errors
-        if task.
-            resources = {}
-            num_cores_per_mpiproc
+    def _from_task_get_scheduler_metadata(self, resource: core.ComputingResource) -> dict[str, Any]:
+        return {"options": {
+                "max_wallclock_seconds": TimeUtils.walltime_to_seconds(resource.walltime),
+                "max_memory_kb": resource.mem * 1024,
                 "resources": {
-                    "num_machines": task.nodes if task.nodes is ,
-                    "num_mpiprocs_per_machine": task.ntasks_per_node,
-                    "num_cores_per_mpiproc": task.cpus_per_task,
+                    "num_machines": resource.nodes,
+                    "num_mpiprocs_per_machine": resource.nresources_per_node,
+                    "num_cores_per_mpiproc": resource.cpus_per_resource,
                 },
-            
-        return {
-            "options": {
-                "max_wallclock_seconds": TimeUtils.walltime_to_seconds(task.walltime)
-                if task.walltime is not None
-                else None,
-                "max_memory_kb": task.mem * 1024 if task.mem is not None else task.mem,
             }
         }
 

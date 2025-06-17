@@ -20,6 +20,7 @@ from pydantic import (
     field_validator,
     model_validator,
 )
+from pydantic_core.core_schema import field_wrap_validator_function
 from ruamel.yaml import YAML
 
 from sirocco.parsing.cycling import Cycling, DateCycling, OneOff
@@ -58,8 +59,10 @@ def extract_merge_key_as_value(data: Any, new_key: str = "name") -> Any:
                 raise TypeError(msg)
     return data
 
+class _BaseModel(BaseModel):
+    model_config = ConfigDict(extra="forbid")
 
-class _NamedBaseModel(BaseModel):
+class _NamedBaseModel(_BaseModel):
     """
     Base model for reading names from yaml keys *or* keyword args to the constructor.
 
@@ -93,7 +96,6 @@ class _NamedBaseModel(BaseModel):
         _NamedBaseModel(name='foo')
     """
 
-    model_config = ConfigDict(extra="forbid")
     name: str
 
     @model_validator(mode="before")
@@ -251,24 +253,30 @@ class ConfigBaseTaskSpecs:
     """
 
     computer: str
-    host: str | None = None
-    account: str | None = None
-    uenv: dict | None = None
-    nodes: int | None = None  # SLURM option `--nodes`, AiiDA option `num_machines`
-    walltime: str | None = None
-    ntasks_per_node: int | None = None  # SLURM option `--ntasks-per-node`, AiiDA option `num_mpiprocs_per_machine`
-    mem: int | None = None  # SLURM option `--mem` in MB, AiiDA option `max_memory_kb` in KB
-    cpus_per_task: int | None = None  # SLURM option `--cpus_per_task`, AiiDA option `num_cores_per_mpiproc`
+    # PRCOMMENT aiida requires some parameters and some not, to simplify it we just require all slurm params
+    #           or none at all (then we take the default that aiida does).
+    resource: ConfigComputingResource | None = None
+    # PRCOMMENT run with mpi only when specified
     mpi_cmd: str | None = None
 
+    @model_validator(mode="after")
+    def check_parameters(self) -> Self:
+        if self.mpi_cmd is not None and "{MPI_TOTAL_PROCS}" in self.mpi_cmd and self.resource is None:
+            raise ValueError(f"Cannot use '{{MPI_TOTAL_PROCS}}' in mpirun command when resource is not specified as we use it to resolve it.")
+        return self
+
+@dataclass(kw_only=True)
+class ConfigComputingResourceSpec:
+
+    uenv: dict = field(default_factory=dict)
+    nodes: int  # SLURM option `--nodes`, AiiDA option `num_machines`
+    walltime: str  # SLURM option ... AiiDA option `...`
+    ntasks_per_node: int  # SLURM option `--ntasks-per-node`, AiiDA option `num_mpiprocs_per_machine`
+    mem: int  # SLURM option `--mem` in MB, AiiDA option `max_memory_kb` in KB
+    cpus_per_task: int  # SLURM option `--cpus_per_task`, AiiDA option `num_cores_per_mpiproc`
 
 
-class ConfigBaseTask(_NamedBaseModel, ConfigBaseTaskSpecs):
-    """
-    Config for generic task, no plugin specifics.
-    """
-
-    parameters: list[str] = Field(default_factory=list)
+class ConfigComputingResource(_BaseModel, ConfigComputingResourceSpec):
 
     @field_validator("walltime")
     @classmethod
@@ -285,6 +293,13 @@ class ConfigBaseTask(_NamedBaseModel, ConfigBaseTaskSpecs):
         except ValueError as e:
             msg = f"walltime must be in HH:MM:SS format, got '{value}'"
             raise ValueError(msg) from e
+
+class ConfigBaseTask(_NamedBaseModel, ConfigBaseTaskSpecs):
+    """
+    Config for generic task, no plugin specifics.
+    """
+
+    parameters: list[str] = Field(default_factory=list)
 
 class ConfigRootTask(ConfigBaseTask):
     plugin: ClassVar[Literal["_root"]] = "_root"
