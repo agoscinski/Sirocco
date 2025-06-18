@@ -30,7 +30,7 @@ job:
     #- firecrest filesystems 
     #- firecrest filesystems -s santis
     #- firecrest filesystems --system $FIRECREST_SYSTEM
-    - #firecrest mkdir /capstor/scratch/cscs/ricoh/sirocco-tmp --system $FIRECREST_SYSTEM || true # ignore if exists TODO i think ifrecrest has an option
+    #- firecrest mkdir /capstor/scratch/cscs/ricoh/sirocco-tmp --system $FIRECREST_SYSTEM || true # ignore if exists TODO i think ifrecrest has an option
     - apt-get update -y && apt-get install -y --no-install-recommends graphviz graphviz-dev rabbitmq-server
     - pip install --upgrade pip
     - pip install . 
