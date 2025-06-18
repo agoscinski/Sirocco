@@ -22,11 +22,11 @@ job:
     #- firecrest rm /capstor/scratch/cscs/ricoh/sirocco-tests --force --system $FIRECREST_SYSTEM || true
     #- firecrest mkdir /capstor/scratch/cscs/ricoh/sirocco-tests --system $FIRECREST_SYSTEM
     #- firecrest upload tests/cases/small-icon/config/config.yml /capstor/scratch/cscs/ricoh/sirocco-tests config.yml --system $FIRECREST_SYSTEM
-    - #firecrest ls --system $FIRECREST_SYSTEM /capstor/scratch/cscs/ricoh
-    - #firecrest id --system $FIRECREST_SYSTEM
-    - #firecrest filesystems --system $FIRECREST_SYSTEM
-    - #firecrest get-partitions --system $FIRECREST_SYSTEM
-    - #firecrest get-reservations --system $FIRECREST_SYSTEM
+    ##- firecrest ls --system $FIRECREST_SYSTEM /capstor/scratch/cscs/ricoh
+    ##- firecrest id --system $FIRECREST_SYSTEM
+    ##- firecrest filesystems --system $FIRECREST_SYSTEM
+    ##- firecrest get-partitions --system $FIRECREST_SYSTEM
+    ##- firecrest get-reservations --system $FIRECREST_SYSTEM
     #- firecrest filesystems 
     #- firecrest filesystems -s santis
     #- firecrest filesystems --system $FIRECREST_SYSTEM
