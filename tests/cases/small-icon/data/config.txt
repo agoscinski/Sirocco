@@ -11,6 +11,7 @@ cycles:
             output:
               - finish [date: 2026-01-01 00:00:00]
               - restart [date: 2026-01-01 00:00:00]
+              - atmo_log [date: 2026-01-01 00:00:00]
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 1, 1, 0, 0)}
             computer: 'remote'
@@ -30,6 +31,7 @@ cycles:
             output:
               - finish [date: 2026-03-01 00:00:00]
               - restart [date: 2026-03-01 00:00:00]
+              - atmo_log [date: 2026-03-01 00:00:00]
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 3, 1, 0, 0)}
             computer: 'remote'
@@ -49,6 +51,7 @@ cycles:
             output:
               - finish [date: 2026-05-01 00:00:00]
               - restart [date: 2026-05-01 00:00:00]
+              - atmo_log [date: 2026-05-01 00:00:00]
             name: 'icon'
             coordinates: {'date': datetime.datetime(2026, 5, 1, 0, 0)}
             computer: 'remote'
@@ -58,8 +61,8 @@ cycles:
   - lastly:
       tasks:
         - cleanup:
-            wait on:
-              - icon [date: 2026-05-01 00:00:00]
+            input:
+              - atmo_log [date: 2026-05-01 00:00:00]
             name: 'cleanup'
             coordinates: {}
             computer: 'remote'

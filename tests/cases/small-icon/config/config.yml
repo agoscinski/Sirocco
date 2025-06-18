@@ -31,13 +31,15 @@ cycles:
                   port: finish_status
               - restart:
                   port: latest_restart_file
+              - atmo_log
   - lastly:
       tasks:
         - cleanup:
-            wait_on:
-              - icon:
+            inputs:
+              - atmo_log:
                   target_cycle:
                     date: 2026-05-01T00:00
+                  port: None
 tasks:
   - icon:
       plugin: icon
@@ -69,5 +71,7 @@ data:
          src: /TESTS_ROOTDIR/tests/cases/small-icon/config/ICON/dmin_wetgrowth_lookup.nc
          computer: remote
   generated:
-     - finish:
-     - restart:
+     - finish: {}
+     - restart: {}
+     - atmo_log:
+         src: nml.atmo.log

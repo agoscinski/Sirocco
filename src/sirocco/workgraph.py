@@ -13,6 +13,7 @@ import aiida_workgraph  # type: ignore[import-untyped] # does not have proper ty
 import aiida_workgraph.tasks.factory.shelljob_task  # type: ignore[import-untyped]  # is only for a workaround
 from aiida.common.exceptions import NotExistent
 from aiida_icon.calculations import IconCalculation
+from aiida_shell.parsers.shell import ShellParser
 
 from sirocco import core
 
@@ -300,6 +301,7 @@ class AiidaWorkGraph:
 
         builder = IconCalculation.get_builder()
         builder.code = icon_code
+        builder.metadata.options.additional_retrieve_list = []  # type: ignore[attr-defined] # aiida creates attrs automatically overwriting __getattr__
 
         task.update_icon_namelists_from_workflow()
 
@@ -332,10 +334,21 @@ class AiidaWorkGraph:
         self._aiida_socket_nodes[output_label] = output_socket
 
     @_link_output_node_to_task.register
-    def _link_output_node_to_icon_task(self, task: core.IconTask, port: str, output: core.Data):
+    def _link_output_node_to_icon_task(self, task: core.IconTask, port: str | None, output: core.Data):
         workgraph_task = self.task_from_core(task)
         output_label = self.get_aiida_label_from_graph_item(output)
-        output_socket = workgraph_task.outputs._sockets.get(port)  # noqa SLF001 # there so public accessor
+
+        if port is None:
+            # To avoid nested namespaces due to dots in name
+            output_socket = workgraph_task.add_output("workgraph.any", ShellParser.format_link_label(str(output.src)))
+
+            workgraph_task.inputs.metadata.options.additional_retrieve_list.value.append(str(output.src))
+        else:
+            output_socket = workgraph_task.outputs._sockets.get(port)  # noqa SLF001 # there so public accessor
+
+        if output_socket is None:
+            msg = f"Output socket {output_label!r} was not successfully created. Please contact a developer."
+            raise ValueError(msg)
         self._aiida_socket_nodes[output_label] = output_socket
 
     @functools.singledispatchmethod
