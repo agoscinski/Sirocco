@@ -68,16 +68,6 @@ computer.set_prepend_text(prepend_text)
 transport = computer.get_transport()
 with transport:
     transport.rmtree(REMOTE_TESTSDIR)
-    # mkdir all directory so we can use puttree, TODO might be bug in firecrest
-    # puttree is buggy so we do manually
-    #transport.puttree(localpath=workdir / "tests", remotepath=str(Path(REMOTE_TESTSDIR)))
-
-    #ignore_exsting does work as parents
-    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config", ignore_existing=True)
-    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON")
-    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/ICON/bin")
-    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/data")
-    #transport.mkdir(Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/config/scripts")
     for dirpath, dirnames, filenames in os.walk(workdir):
         dirpath = Path(dirpath)
         relative_dirpath = dirpath.relative_to(workdir)

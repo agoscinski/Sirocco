@@ -36,7 +36,7 @@ dependencies = [
   "aiida-core>=2.5",
   "aiida-icon>=0.4.0",
   #agoscinski main
-  "aiida-firecrest @ git+https://github.com/agoscinski/aiida-firecrest.git@c53f28250c2387770f3195d72870cf87e43ca6e0",
+  "aiida-firecrest @ git+https://github.com/agoscinski/aiida-firecrest.git@c8ea02d",
   #upstream main
   #"aiida-firecrest @ git+https://github.com/agoscinski/aiida-firecrest.git@8e99890",
   "aiida-workgraph==0.5.2",
