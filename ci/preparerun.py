@@ -47,7 +47,10 @@ if workdir.exists():
 shutil.copytree(test_case, workdir / "tests/cases/small-icon/config")
 yml_path = workdir / "tests/cases/small-icon/config/config.yml"
 
-REMOTE_TESTSDIR = "/capstor/store/cscs/userlab/cwd01/sirocco-ci"
+import uuid
+test_run_uuid = uuid.uuid1()
+print("Test UUID:", test_run_uuid)
+REMOTE_TESTSDIR = f"/capstor/store/cscs/userlab/cwd01/sirocco-ci/testrun-{test_run_uuid}"
 yml_path.write_text(yml_path.read_text().replace("/TESTS_ROOTDIR/", REMOTE_TESTSDIR).replace("/DATA_REMOTEDIR/", REMOTE_TESTSDIR))
 print("yml", yml_path, "content:\n", yml_path.read_text())
 
@@ -67,7 +70,8 @@ mv icon_grid_0013_R02B04_R.nc {Path(REMOTE_TESTSDIR) / "tests/cases/small-icon/c
 computer.set_prepend_text(prepend_text)
 transport = computer.get_transport()
 with transport:
-    transport.rmtree(REMOTE_TESTSDIR)
+    if transport.path_exists(REMOTE_TESTSDIR):
+        transport.rmtree(REMOTE_TESTSDIR)
     for dirpath, dirnames, filenames in os.walk(workdir):
         dirpath = Path(dirpath)
         relative_dirpath = dirpath.relative_to(workdir)
