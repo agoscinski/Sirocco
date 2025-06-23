@@ -29,8 +29,8 @@ job:
     - verdi presto --profile-name "cscs-ci"
     - verdi config set transport.task_maximum_attempts 1
     - verdi config set transport.task_retry_initial_interval 1
-    - verdi computer setup --label remote --hostname unused --transport firecrest --scheduler firecrest --work-dir /capstor/scratch/cscs/ricoh/sirocco-aiida -n
+    - verdi computer setup --label remote --hostname unused --transport firecrest --scheduler firecrest --work-dir /capstor/store/cscs/userlab/cwd01/sirocco-ci -n
     - verdi devel launch-add # hacky way to define localhost TODO do properly
-    - verdi computer configure firecrest remote --url $FIRECREST_URL --token-uri $FIRECREST_TOKEN_URI --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $FIRECREST_SYSTEM --temp-directory /capstor/scratch/cscs/ricoh/sirocco-tmp --api-version $FIRECREST_API_VERSION --small-file-size-mb 4096
+    - verdi computer configure firecrest remote --url $FIRECREST_URL --token-uri $FIRECREST_TOKEN_URI --client-id $FIRECREST_CLIENT_ID --client-secret $FIRECREST_CLIENT_SECRET --compute-resource $FIRECREST_SYSTEM --temp-directory /capstor/store/cscs/userlab/cwd01/sirocco-ci/tmp --api-version $FIRECREST_API_VERSION --small-file-size-mb 4096
     - verdi computer test --print-traceback remote # TODO does not fail
     - python ci/preparerun.py

@@ -47,7 +47,7 @@ if workdir.exists():
 shutil.copytree(test_case, workdir / "tests/cases/small-icon/config")
 yml_path = workdir / "tests/cases/small-icon/config/config.yml"
 
-REMOTE_TESTSDIR = "/capstor/scratch/cscs/ricoh/sirocco-tests/"
+REMOTE_TESTSDIR = "/capstor/store/cscs/userlab/cwd01/sirocco-ci"
 yml_path.write_text(yml_path.read_text().replace("/TESTS_ROOTDIR/", REMOTE_TESTSDIR).replace("/DATA_REMOTEDIR/", REMOTE_TESTSDIR))
 print("yml", yml_path, "content:\n", yml_path.read_text())
 
