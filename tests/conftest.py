@@ -263,7 +263,7 @@ def aiida_computer_session(tmp_path_factory) -> t.Callable[[], "Computer"]:
 
 
 @pytest.fixture(scope="session")
-def aiida_remote_computer(request, aiida_computer_session):
+def aiida_remote_computer(request, aiida_computer_session, test_rootdir):
     comp_spec = request.config.getoption("remote")
 
     if comp_spec == "localhost-ssh":
@@ -278,14 +278,28 @@ def aiida_remote_computer(request, aiida_computer_session):
                 safe_interval=0.1,
             )
 
-        return computer
+    elif comp_spec == "test-integration":
+        computer = aiida_computer_session(label="remote", hostname="localhost", transport_type="core.ssh")
 
-    elif comp_spec == "cscs-ci":  # noqa: RET505 | superfluous-else-return
+        computer.configure(
+            key_filename=f"{os.environ['HOME']}/.ssh/id_rsa",
+            key_policy="AutoAddPolicy",
+            safe_interval=0.1,
+        )
+
+        # required to load mpi and options for icon
+        # FIXME: intermangles computer setup and CI specific needs, need to pass this information somehow from CI
+        computer.set_prepend_text(f""". /home/runner/work/Sirocco/Sirocco/spack/share/spack/setup-env.sh || true
+spack env activate {test_rootdir}""")
+
+    elif comp_spec == "cscs-ci":
         msg = "Infrastructure for FirecREST net setup yet."
         raise NotImplementedError(msg)
     else:
         msg = f"Wrong `remote` marker specified: {comp_spec}. Choose either `localhost-ssh` or `cscs-ci`."
         raise ValueError(msg)
+
+    return computer
 
 
 @pytest.fixture(scope="session")
