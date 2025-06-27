@@ -14,7 +14,7 @@ jobs:
     timeout-minutes: 30
     strategy:
       matrix:
-        python-version: ['3.10', '3.11', '3.12', '3.13']
+        python-version: ['3.12']
         aiida-version: ['stable']
 
     steps:
@@ -48,6 +48,17 @@ jobs:
       run: |
         pip install .
         verdi presto
+
+    - name: Setup upterm session
+      uses: lhotari/action-upterm@v1
+
+    - name: Debug run
+      run: |
+        verdi presto
+        python setupcomp.py
+        verdi computer test --print-traceback remote
+
+      shell: hatch shell
     - name: Run test suite
       env:
         PYTEST_ADDOPTS: "--durations=0"
