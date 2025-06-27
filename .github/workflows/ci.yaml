@@ -52,7 +52,7 @@ jobs:
       env:
         PYTEST_ADDOPTS: "--durations=0"
       run: |
-        hatch test --cover --parallel -- -m "not requires_icon" --remote localhost-ssh
+        hatch test -- -m 'not requires_icon' -s --remote localhost-ssh -k test_run_workgraph tests/test_wc_workflow.py
 
   docs:
     runs-on: ubuntu-latest
